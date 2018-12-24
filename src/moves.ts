@@ -1,10 +1,12 @@
-import { Board, TURN_MASK, TURN_WHITE, WHITE, BLACK, COLOR_MASK, PAWN, EMPTY, PIECE_MASK, BISHOP, QUEEN, ROOK, KNIGHT, KING } from './board';
+import {
+    Board, WHITE, BLACK, COLOR_MASK, PAWN, EMPTY, PIECE_MASK,
+    BISHOP, QUEEN, ROOK, KNIGHT, KING, BOARD_INDEX_TURN
+} from './board';
 
 export interface Move {
     from: number;
     to: number;
     captured: number;
-    fromState: number;
 }
 
 interface SimpleMove {
@@ -23,8 +25,7 @@ const PIECE_MOVEMENTS: Array<Array<number>> = [
 ]
 
 export function generateMoves(board: Board): Array<Move> {
-    const { pieces, state } = board;
-    const colorToMove = (board.state & TURN_MASK) === TURN_WHITE ? WHITE : BLACK;
+    const colorToMove = board[BOARD_INDEX_TURN];
     const otherColor = colorToMove === WHITE ? BLACK : WHITE;
     const simpleMoves: Array<SimpleMove> = [];
     const moves: Array<Move> = [];
@@ -32,35 +33,35 @@ export function generateMoves(board: Board): Array<Move> {
     let pos = 21;
     for (let r = 8; r >= 1; r--) {
         for (let c = 1; c <= 8; c++) {
-            const piece = pieces[pos];
+            const piece = board[pos];
             const basePiece = piece & PIECE_MASK;
             if ((piece & COLOR_MASK) === colorToMove) {
                 switch (basePiece) {
                     case PAWN:
                         if (colorToMove === WHITE) {
-                            if (pieces[pos - 10] === EMPTY) {
+                            if (board[pos - 10] === EMPTY) {
                                 simpleMoves.push({ from: pos, to: pos - 10 });
-                                if (r === 2 && board.pieces[pos - 20] === EMPTY) {
+                                if (r === 2 && board[pos - 20] === EMPTY) {
                                     simpleMoves.push({ from: pos, to: pos - 20 });
                                 }
                             }
-                            if ((pieces[pos - 11] & COLOR_MASK) === BLACK) {
+                            if ((board[pos - 11] & COLOR_MASK) === BLACK) {
                                 simpleMoves.push({ from: pos, to: pos - 11 });
                             }
-                            if ((pieces[pos - 9] & COLOR_MASK) === BLACK) {
+                            if ((board[pos - 9] & COLOR_MASK) === BLACK) {
                                 simpleMoves.push({ from: pos, to: pos - 9 });
                             }
                         } else {
-                            if (pieces[pos + 10] === EMPTY) {
+                            if (board[pos + 10] === EMPTY) {
                                 simpleMoves.push({ from: pos, to: pos + 10 });
-                                if (r === 7 && board.pieces[pos + 20] === EMPTY) {
+                                if (r === 7 && board[pos + 20] === EMPTY) {
                                     simpleMoves.push({ from: pos, to: pos + 20 });
                                 }
                             }
-                            if ((pieces[pos + 11] & COLOR_MASK) === WHITE) {
+                            if ((board[pos + 11] & COLOR_MASK) === WHITE) {
                                 simpleMoves.push({ from: pos, to: pos + 11 });
                             }
-                            if ((pieces[pos + 9] & COLOR_MASK) === WHITE) {
+                            if ((board[pos + 9] & COLOR_MASK) === WHITE) {
                                 simpleMoves.push({ from: pos, to: pos + 9 });
                             }
                         }
@@ -71,11 +72,11 @@ export function generateMoves(board: Board): Array<Move> {
                             const movements = PIECE_MOVEMENTS[basePiece];
                             for (const delta of movements) {
                                 let to = pos + delta;
-                                while (pieces[to] === EMPTY) {
+                                while (board[to] === EMPTY) {
                                     simpleMoves.push({ from: pos, to });
                                     to += delta;
                                 }
-                                if ((pieces[to] & COLOR_MASK) === otherColor) {
+                                if ((board[to] & COLOR_MASK) === otherColor) {
                                     simpleMoves.push({ from: pos, to });
                                 }
                             }
@@ -87,7 +88,7 @@ export function generateMoves(board: Board): Array<Move> {
                             const movements = PIECE_MOVEMENTS[basePiece];
                             for (const delta of movements) {
                                 const to = pos + delta;
-                                if (pieces[to] === EMPTY || (pieces[to] & COLOR_MASK) === otherColor) {
+                                if (board[to] === EMPTY || (board[to] & COLOR_MASK) === otherColor) {
                                     simpleMoves.push({ from: pos, to });
                                 }
                             }
@@ -104,8 +105,7 @@ export function generateMoves(board: Board): Array<Move> {
         moves.push({
             from: simpleMove.from,
             to: simpleMove.to,
-            captured: pieces[simpleMove.to],
-            fromState: state
+            captured: board[simpleMove.to]
         })
     }
 
