@@ -1,7 +1,7 @@
 // board: 12 x 10 = 120
 // turn: 1
 // castling: 1
-// en pessant: 1
+// en passant: 1
 // plys since pawn move or capture: 1
 export type Board = Uint8Array;
 export const BOARD_INDEX_TURN = 120;
