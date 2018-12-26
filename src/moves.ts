@@ -1,6 +1,6 @@
 import {
     Board, WHITE, BLACK, COLOR_MASK, PAWN, EMPTY, PIECE_MASK,
-    BISHOP, QUEEN, ROOK, KNIGHT, KING, BOARD_INDEX_TURN, BOARD_INDEX_EP, BOARD_INDEX_PLYS
+    BISHOP, QUEEN, ROOK, KNIGHT, KING, BOARD_INDEX_TURN, BOARD_INDEX_EP, BOARD_INDEX_PLYS, BOARD_INDEX_CASTLING
 } from './board';
 
 // 0: from
@@ -17,20 +17,20 @@ const KING_MOVEMENTS = [9, 11, -9, -11, -1, 1, -10, 10];
 
 // maximum number of moves of any position: 218 (http://www.talkchess.com/forum3/viewtopic.php?t=61792)
 
-export function generateMoves(board: Board): { moves: Uint8Array, count: number } {
+export function generateMoves(board: Board): Array<Move> {
     const thisTurn = board[BOARD_INDEX_TURN];
     const nextTurn = thisTurn === WHITE ? BLACK : WHITE;
     const turnXor = thisTurn ^ nextTurn;
     // const thisCastling = board[BOARD_INDEX_CASTLING];
     const thisEP = board[BOARD_INDEX_EP];
     const thisPlys = board[BOARD_INDEX_PLYS];
-    const moves = new Uint8Array(256 * 8);
+    const moveData = new Uint8Array(256 * 8);
     let length = 0;
     let pos = 21, piece: number, basePiece: number;
 
     function addMove(to: number, nextEP: number, nextPlys: number) {
         const captured = board[to];
-        moves.set([
+        moveData.set([
             pos, to, captured, 0,
             turnXor, 0, thisEP ^ nextEP, thisPlys ^ nextPlys
         ], length);
@@ -135,8 +135,37 @@ export function generateMoves(board: Board): { moves: Uint8Array, count: number 
         pos += 2;
     }
 
-    return {
-        moves,
-        count: length >> 3
-    };
+    const moves: Array<Move> = [];
+
+    for (let offset = 0; offset < length; offset += 8) {
+        moves.push(moveData.subarray(offset, offset + 8));
+    }
+
+    return moves;
+}
+
+export function makeMove(board: Board, move: Move) {
+    const from = move[0];
+    const to = move[1];
+    // const captured = move[2];
+    const promoted = move[3];
+    board[to] = promoted || board[from];
+    board[from] = EMPTY;
+    board[BOARD_INDEX_TURN] ^= move[4];
+    board[BOARD_INDEX_CASTLING] ^= move[5];
+    board[BOARD_INDEX_EP] ^= move[6];
+    board[BOARD_INDEX_PLYS] ^= move[7];
+}
+
+export function unmakeMove(board: Board, move: Move) {
+    const from = move[0];
+    const to = move[1];
+    const captured = move[2];
+    const promoted = move[3];
+    board[BOARD_INDEX_TURN] ^= move[4];
+    board[BOARD_INDEX_CASTLING] ^= move[5];
+    board[BOARD_INDEX_EP] ^= move[6];
+    board[BOARD_INDEX_PLYS] ^= move[7];
+    board[from] = promoted ? PAWN | board[BOARD_INDEX_TURN] : board[to];
+    board[to] = captured;
 }

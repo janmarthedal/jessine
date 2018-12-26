@@ -1,12 +1,31 @@
-import { initBoardFromFEN, showBoard } from './board';
-import { generateMoves } from './moves';
+import { initBoardFromFEN, showBoard, Board } from './board';
+import { generateMoves, makeMove, unmakeMove } from './moves';
 
-const b = initBoardFromFEN('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR');
-// const b = initBoardFromFEN('rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R');
-showBoard(b);
+function subPerft(board: Board, depth: number) {
+    if (depth === 0)
+        return 1;
+    
+    const moves = generateMoves(board);
 
-const { moves, count } = generateMoves(b);
+    if (depth === 1)
+        return moves.length;
 
-for (let c = 0; c < count; c++) {
-    console.log(moves.subarray(c << 3, (c + 1) << 3));
+    let result = 0;
+    for (const move of moves) {
+        makeMove(board, move);
+        result += subPerft(board, depth - 1);
+        unmakeMove(board, move);
+    }
+    return result;
 }
+
+function perft(fen: string, depth: number) {
+    const board = initBoardFromFEN(fen);
+    showBoard(board);
+    return subPerft(board, depth);
+    
+}
+
+const count = perft('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR', 2);
+
+console.log(count);
