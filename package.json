@@ -4,9 +4,12 @@
   "description": "",
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc",
     "start": "node dist/main.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "build-lint": "npm run build && npm run tslint",
+    "unit-test": "jest",
+    "test": "npm run build && npm run tslint && npm run unit-test",
+    "tslint": "tslint -c tslint.json -p tsconfig.json"
   },
   "repository": {
     "type": "git",
@@ -22,7 +25,11 @@
   },
   "homepage": "https://github.com/janmarthedal/jessine#readme",
   "devDependencies": {
+    "@types/jest": "^23.3.10",
     "@types/node": "^10.12.18",
+    "jest": "^23.6.0",
+    "ts-jest": "^23.10.5",
+    "tslint": "^5.12.0",
     "typescript": "^3.2.2"
   }
 }

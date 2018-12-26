@@ -90,5 +90,5 @@ export function showBoard(board: Board) {
         }
         process.stdout.write('\n');
     }
-    process.stdout.write('\n   a b c d e f g h\n')
+    process.stdout.write('\n   a b c d e f g h\n');
 }

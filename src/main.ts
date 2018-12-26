@@ -16,7 +16,7 @@ function moveToString(board: Board, move: Move) {
 function perftSub(board: Board, depth: number, showMove: boolean) {
     if (depth === 0)
         return 1;
-    
+
     const moves = generateMoves(board);
 
     if (depth === 1)
@@ -43,7 +43,6 @@ function perft(fen: string, depth: number) {
     const board = initBoardFromFEN(fen);
     showBoard(board);
     return perftSub(board, depth, true);
-    
 }
 
 const count = perft('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR', 4);
