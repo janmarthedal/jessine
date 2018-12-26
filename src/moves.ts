@@ -1,6 +1,6 @@
 import {
     Board, WHITE, BLACK, COLOR_MASK, PAWN, EMPTY, PIECE_MASK,
-    BISHOP, QUEEN, ROOK, KNIGHT, KING, BOARD_INDEX_TURN, BOARD_INDEX_EP, BOARD_INDEX_PLYS, BOARD_INDEX_CASTLING, BOARD_INDEX_WHITE_KING, BOARD_INDEX_BLACK_KING
+    BISHOP, QUEEN, ROOK, KNIGHT, KING, BOARD_INDEX_TURN, BOARD_INDEX_EP, BOARD_INDEX_PLYS, BOARD_INDEX_CASTLING, BOARD_INDEX_WHITE_KING, BOARD_INDEX_BLACK_KING, posToAlgebraic
 } from './board';
 
 // 0: from
@@ -234,4 +234,8 @@ export function makeMoveIfLegal(board: Board, move: Move): boolean {
         return false;
     }
     return true;
+}
+
+export function moveToAlgebraic(move: Move) {
+    return posToAlgebraic(move[0]) + posToAlgebraic(move[1]);
 }

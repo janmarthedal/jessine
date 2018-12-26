@@ -3,7 +3,7 @@ import {
     CASTLING_QUEEN_WHITE, CASTLING_KING_BLACK, CASTLING_QUEEN_BLACK, BOARD_INDEX_EP,
     BOARD_INDEX_PLYS, BOARD_INDEX_WHITE_KING, BOARD_INDEX_BLACK_KING, BLACK, algebraicToPos, Board, posToAlgebraic
 } from '../src/board';
-import { generateMoves, makeMoveIfLegal, unmakeMove, isAttackedBy } from '../src/moves';
+import { generateMoves, makeMoveIfLegal, unmakeMove, isAttackedBy, moveToAlgebraic } from '../src/moves';
 
 describe('algebraicToPos', () => {
 
@@ -20,7 +20,7 @@ describe('algebraicToPos', () => {
 
 });
 
-describe.only('posToAlgebraic', () => {
+describe('posToAlgebraic', () => {
 
     test('1', () => {
         expect(posToAlgebraic(91)).toBe('a1');
@@ -84,28 +84,23 @@ describe('Move generation', () => {
     test('Initial position', () => {
         const board = initBoard('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0');
         const moves = generateLegalMoves(board);
-        const ml = moves.map(m => [m[0], m[1]]);
-        ml.sort((a, b) => (a[0] - b[0]) | (a[1] - b[1]));
+        const ml = moves.map(m => moveToAlgebraic(m));
+        ml.sort();
         expect(ml).toEqual([
-            [ 81, 61 ], [ 81, 71 ], [ 82, 62 ], [ 83, 63 ],
-            [ 82, 72 ], [ 83, 73 ], [ 84, 64 ], [ 85, 65 ],
-            [ 84, 74 ], [ 86, 66 ], [ 87, 67 ], [ 88, 68 ],
-            [ 92, 71 ], [ 92, 73 ], [ 85, 75 ], [ 86, 76 ],
-            [ 87, 77 ], [ 88, 78 ], [ 97, 76 ], [ 97, 78 ]
+            "a2a3", "a2a4", "b1a3", "b1c3", "b2b3", "b2b4", "c2c3", "c2c4", "d2d3", "d2d4",
+            "e2e3", "e2e4", "f2f3", "f2f4", "g1f3", "g1h3", "g2g3", "g2g4", "h2h3", "h2h4"
         ]);
     });
 
     test('2', () => {
         const board = initBoard('rnbqk1nr/pppp1ppp/8/4p3/1b2P3/8/PPPP1PPP/RNBQKBNR w KQkq - 1');
         const moves = generateLegalMoves(board);
-        const ml = moves.map(m => [m[0], m[1]]);
-        ml.sort((a, b) => (a[0] - b[0]) | (a[1] - b[1]));
+        const ml = moves.map(m => moveToAlgebraic(m));
+        ml.sort();
         expect(ml).toEqual([
-            [81, 61], [83, 63], [86, 66], [88, 68], [81, 71], [83, 73],
-            [86, 76], [87, 77], [92, 71], [82, 72], [87, 67], [94, 58],
-            [94, 67], [94, 76], [88, 78], [96, 41], [96, 52], [96, 63],
-            [92, 73], [96, 74], [97, 76], [97, 78], [94, 85], [95, 85],
-            [96, 85], [97, 85]
+            "a2a3", "a2a4", "b1a3", "b1c3", "b2b3", "c2c3", "c2c4", "d1e2", "d1f3", "d1g4",
+            "d1h5", "e1e2", "f1a6", "f1b5", "f1c4", "f1d3", "f1e2", "f2f3", "f2f4", "g1e2",
+            "g1f3", "g1h3", "g2g3", "g2g4", "h2h3", "h2h4"
         ]);
     });
 
