@@ -81,7 +81,6 @@ export function initBoard(fen: string): Board {
         (castling.indexOf('k') >= 0 ? CASTLING_KING_BLACK : 0) |
         (castling.indexOf('q') >= 0 ? CASTLING_QUEEN_BLACK : 0);
     board[BOARD_INDEX_EP] = items[3].length === 2 ? algebraicToPos(items[3]) : 0;
-    console.log(items[3], board[BOARD_INDEX_EP]);
     board[BOARD_INDEX_PLYS] = Number.parseInt(items[4]);
     return board;
 }

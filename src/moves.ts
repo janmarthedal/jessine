@@ -157,7 +157,7 @@ export function isAttackedBy(board: Board, pos: number, color: number): boolean 
         while (board[from] === EMPTY) {
             from += delta;
         }
-        if (board[pos + delta] === (BISHOP | color))
+        if (board[from] === (BISHOP | color))
             return true;
     }
     for (const delta of KNIGHT_MOVEMENTS) {
@@ -169,7 +169,7 @@ export function isAttackedBy(board: Board, pos: number, color: number): boolean 
         while (board[from] === EMPTY) {
             from += delta;
         }
-        if (board[pos + delta] === (ROOK | color))
+        if (board[from] === (ROOK | color))
             return true;
     }
     for (const delta of KING_MOVEMENTS) {
@@ -177,7 +177,7 @@ export function isAttackedBy(board: Board, pos: number, color: number): boolean 
         while (board[from] === EMPTY) {
             from += delta;
         }
-        if (board[pos + delta] === (QUEEN | color))
+        if (board[from] === (QUEEN | color))
             return true;
     }
     for (const delta of KING_MOVEMENTS) {
@@ -223,4 +223,15 @@ export function unmakeMove(board: Board, move: Move) {
     } else if (piece === (KING | BLACK)) {
         board[BOARD_INDEX_BLACK_KING] = from;
     }
+}
+
+export function makeMoveIfLegal(board: Board, move: Move): boolean {
+    makeMove(board, move);
+    const turn = board[BOARD_INDEX_TURN];
+    const inCheck = isAttackedBy(board, board[turn === BLACK ? BOARD_INDEX_WHITE_KING : BOARD_INDEX_BLACK_KING], turn);
+    if (inCheck) {
+        unmakeMove(board, move);
+        return false;
+    }
+    return true;
 }
