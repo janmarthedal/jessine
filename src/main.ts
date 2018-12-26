@@ -1,4 +1,4 @@
-import { initBoardFromFEN, showBoard, Board, PIECE_MASK, BISHOP, KNIGHT, ROOK, QUEEN, KING, BOARD_INDEX_TURN, BOARD_INDEX_WHITE_KING, BOARD_INDEX_BLACK_KING, BLACK } from './board';
+import { initBoard, showBoard, Board, PIECE_MASK, BISHOP, KNIGHT, ROOK, QUEEN, KING, BOARD_INDEX_TURN, BOARD_INDEX_WHITE_KING, BOARD_INDEX_BLACK_KING, BLACK } from './board';
 import { generateMoves, makeMove, unmakeMove, Move, isAttackedBy } from './moves';
 
 function moveToString(board: Board, move: Move) {
@@ -40,11 +40,11 @@ function perftSub(board: Board, depth: number, showMove: boolean) {
 }
 
 function perft(fen: string, depth: number) {
-    const board = initBoardFromFEN(fen);
+    const board = initBoard(fen);
     showBoard(board);
     return perftSub(board, depth, true);
 }
 
-const count = perft('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR', 4);
+const count = perft('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0', 4);
 
 console.log(count);

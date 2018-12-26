@@ -37,7 +37,7 @@ const ASCII_PIECES = [EMPTY, EMPTY,
 const ASCII_CHARS = '. PBNRQKpbnrqk';
 
 function createEmptyBoard(): Board {
-    const board = new Uint8Array(124);
+    const board = new Uint8Array(126);
     for (let c = 0; c < 10; c++) {
         board[c] = board[10 + c] = board[100 + c] = board[110 + c] = COLOR_MASK;
     }
@@ -52,11 +52,18 @@ function createEmptyBoard(): Board {
     return board;
 }
 
-function initBoard(boardString: string): Board {
+const SPACES = '        ';
+
+export function initBoard(fen: string): Board {
     const board = createEmptyBoard();
-    const charBoard = boardString.replace(/\//g, '');
+    const items = fen.split(' ');
+    let pieces = items[0];
+    pieces = fen.replace(/\//g, '');
+    for (let k = 1; k <= 8; k++) {
+        pieces = pieces.replace(new RegExp(k.toString(), 'g'), SPACES.substr(0, k));
+    }
     for (let k = 0; k < 64; k++) {
-        const p = charBoard[k];
+        const p = pieces[k];
         const boardIndex = ((k >> 3) + 2) * 10 + (k & 7) + 1;
         const i = ASCII_CHARS.indexOf(p);
         const piece = ASCII_PIECES[i];
@@ -67,16 +74,16 @@ function initBoard(boardString: string): Board {
             board[BOARD_INDEX_BLACK_KING] = boardIndex;
         }
     }
+    const castling = items[2];
+    board[BOARD_INDEX_TURN] = items[1].toUpperCase() === 'W' ? WHITE : BLACK;
+    board[BOARD_INDEX_CASTLING] = (castling.indexOf('K') >= 0 ? CASTLING_KING_WHITE : 0) |
+        (castling.indexOf('Q') >= 0 ? CASTLING_QUEEN_WHITE : 0) |
+        (castling.indexOf('k') >= 0 ? CASTLING_KING_BLACK : 0) |
+        (castling.indexOf('q') >= 0 ? CASTLING_QUEEN_BLACK : 0);
+    board[BOARD_INDEX_EP] = items[3].length === 2 ? algebraicToPos(items[3]) : 0;
+    console.log(items[3], board[BOARD_INDEX_EP]);
+    board[BOARD_INDEX_PLYS] = Number.parseInt(items[4]);
     return board;
-}
-
-export function initBoardFromFEN(boardString: string): Board {
-    const SPACES = '        ';
-    let b = boardString;
-    for (let k = 1; k <= 8; k++) {
-        b = b.replace(new RegExp(k.toString(), 'g'), SPACES.substr(0, k));
-    }
-    return initBoard(b);
 }
 
 export function showBoard(board: Board) {
@@ -91,4 +98,9 @@ export function showBoard(board: Board) {
         process.stdout.write('\n');
     }
     process.stdout.write('\n   a b c d e f g h\n');
+}
+
+export function algebraicToPos(alg: string) {
+    alg = alg.toLowerCase();
+    return (alg.charCodeAt(0) - 96) + 10 * (58 - alg.charCodeAt(1));
 }
