@@ -1,7 +1,7 @@
 import {
     initBoard, BOARD_INDEX_TURN, WHITE, BOARD_INDEX_CASTLING, CASTLING_KING_WHITE,
     CASTLING_QUEEN_WHITE, CASTLING_KING_BLACK, CASTLING_QUEEN_BLACK, BOARD_INDEX_EP,
-    BOARD_INDEX_PLYS, BOARD_INDEX_WHITE_KING, BOARD_INDEX_BLACK_KING, BLACK, algebraicToPos, Board
+    BOARD_INDEX_PLYS, BOARD_INDEX_WHITE_KING, BOARD_INDEX_BLACK_KING, BLACK, algebraicToPos, Board, posToAlgebraic
 } from '../src/board';
 import { generateMoves, makeMoveIfLegal, unmakeMove, isAttackedBy } from '../src/moves';
 
@@ -16,6 +16,21 @@ describe('algebraicToPos', () => {
         expect(algebraicToPos('f6')).toBe(46);
         expect(algebraicToPos('g7')).toBe(37);
         expect(algebraicToPos('h8')).toBe(28);
+    });
+
+});
+
+describe.only('posToAlgebraic', () => {
+
+    test('1', () => {
+        expect(posToAlgebraic(91)).toBe('a1');
+        expect(posToAlgebraic(82)).toBe('b2');
+        expect(posToAlgebraic(73)).toBe('c3');
+        expect(posToAlgebraic(64)).toBe('d4');
+        expect(posToAlgebraic(55)).toBe('e5');
+        expect(posToAlgebraic(46)).toBe('f6');
+        expect(posToAlgebraic(37)).toBe('g7');
+        expect(posToAlgebraic(28)).toBe('h8');
     });
 
 });

@@ -103,3 +103,7 @@ export function algebraicToPos(alg: string) {
     alg = alg.toLowerCase();
     return (alg.charCodeAt(0) - 96) + 10 * (58 - alg.charCodeAt(1));
 }
+
+export function posToAlgebraic(pos: number) {
+    return String.fromCharCode(96 + pos % 10) + String.fromCharCode(58 - Math.floor(pos / 10));
+}
