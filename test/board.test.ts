@@ -104,4 +104,24 @@ describe('Move generation', () => {
         ]);
     });
 
+    test('3', () => {
+        const board = initBoard('8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0');
+        const moves = generateLegalMoves(board);
+        const ml = moves.map(m => moveToAlgebraic(m));
+        ml.sort();
+        expect(ml).toEqual([
+            "a5a4", "a5a6", "b4a4", "b4b1", "b4b2", "b4b3", "b4c4", "b4d4", "b4e4", "b4f4",
+            "e2e3", "e2e4", "g2g3", "g2g4"
+        ]);
+    });
+
+    test.only('3.e2e4', () => {
+        const board = initBoard('8/2p5/3p4/KP5r/1R2Pp1k/8/6P1/8 b - - 0');
+        const moves = generateLegalMoves(board);
+        const ml = moves.map(m => moveToAlgebraic(m));
+        ml.sort();
+        expect(ml).toEqual([
+        ]);
+    });
+
 });

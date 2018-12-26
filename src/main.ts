@@ -21,9 +21,6 @@ function perftSub(board: Board, depth: number, showMove: boolean) {
 
     const moves = generateMoves(board);
 
-    if (depth === 1)
-        return moves.length;
-
     let result = 0;
     for (const move of moves) {
         const legalMove = makeMoveIfLegal(board, move);
@@ -44,6 +41,8 @@ function perft(fen: string, depth: number) {
     return perftSub(board, depth, true);
 }
 
-const count = perft('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0', 4);
+// const count = perft('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0', 5);
+// const count = perft('8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0', 2);
+const count = perft('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0', 3);
 
 console.log(count);
