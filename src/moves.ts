@@ -1,6 +1,6 @@
 import {
     Board, WHITE, BLACK, COLOR_MASK, PAWN, EMPTY, PIECE_MASK,
-    BISHOP, QUEEN, ROOK, KNIGHT, KING, BOARD_INDEX_TURN, BOARD_INDEX_EP, BOARD_INDEX_PLYS, BOARD_INDEX_CASTLING
+    BISHOP, QUEEN, ROOK, KNIGHT, KING, BOARD_INDEX_TURN, BOARD_INDEX_EP, BOARD_INDEX_PLYS, BOARD_INDEX_CASTLING, BOARD_INDEX_WHITE_KING, BOARD_INDEX_BLACK_KING
 } from './board';
 
 // 0: from
@@ -144,13 +144,62 @@ export function generateMoves(board: Board): Array<Move> {
     return moves;
 }
 
+export function isAttackedBy(board: Board, pos: number, color: number): boolean {
+    if (color === WHITE) {
+        if (board[pos + 9] === (PAWN | WHITE) || board[pos + 11] === (PAWN | WHITE))
+            return true;
+    } else {
+        if (board[pos - 9] === (PAWN | BLACK) || board[pos - 11] === (PAWN | BLACK))
+            return true;
+    }
+    for (const delta of BISHOP_MOVEMENTS) {
+        let from = pos + delta;
+        while (board[from] === EMPTY) {
+            from += delta;
+        }
+        if (board[pos + delta] === (BISHOP | color))
+            return true;
+    }
+    for (const delta of KNIGHT_MOVEMENTS) {
+        if (board[pos + delta] === (KNIGHT | color))
+            return true;
+    }
+    for (const delta of ROOK_MOVEMENTS) {
+        let from = pos + delta;
+        while (board[from] === EMPTY) {
+            from += delta;
+        }
+        if (board[pos + delta] === (ROOK | color))
+            return true;
+    }
+    for (const delta of KING_MOVEMENTS) {
+        let from = pos + delta;
+        while (board[from] === EMPTY) {
+            from += delta;
+        }
+        if (board[pos + delta] === (QUEEN | color))
+            return true;
+    }
+    for (const delta of KING_MOVEMENTS) {
+        if (board[pos + delta] === (KING | color))
+            return true;
+    }
+    return false;
+}
+
 export function makeMove(board: Board, move: Move) {
     const from = move[0];
+    const piece = board[from];
     const to = move[1];
     // const captured = move[2];
     const promoted = move[3];
-    board[to] = promoted || board[from];
+    board[to] = promoted || piece;
     board[from] = EMPTY;
+    if (piece === (KING | WHITE)) {
+        board[BOARD_INDEX_WHITE_KING] = to;
+    } else if (piece === (KING | BLACK)) {
+        board[BOARD_INDEX_BLACK_KING] = to;
+    }
     board[BOARD_INDEX_TURN] ^= move[4];
     board[BOARD_INDEX_CASTLING] ^= move[5];
     board[BOARD_INDEX_EP] ^= move[6];
@@ -166,6 +215,12 @@ export function unmakeMove(board: Board, move: Move) {
     board[BOARD_INDEX_CASTLING] ^= move[5];
     board[BOARD_INDEX_EP] ^= move[6];
     board[BOARD_INDEX_PLYS] ^= move[7];
-    board[from] = promoted ? PAWN | board[BOARD_INDEX_TURN] : board[to];
+    const piece = promoted ? PAWN | board[BOARD_INDEX_TURN] : board[to];
+    board[from] = piece;
     board[to] = captured;
+    if (piece === (KING | WHITE)) {
+        board[BOARD_INDEX_WHITE_KING] = from;
+    } else if (piece === (KING | BLACK)) {
+        board[BOARD_INDEX_BLACK_KING] = from;
+    }
 }

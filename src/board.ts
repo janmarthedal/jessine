@@ -1,13 +1,17 @@
 // board: 12 x 10 = 120
+// white king pos: 1
+// black king pos: 1
 // turn: 1
 // castling: 1
 // en passant: 1
 // plys since pawn move or capture: 1
 export type Board = Uint8Array;
-export const BOARD_INDEX_TURN = 120;
-export const BOARD_INDEX_CASTLING = 121;
-export const BOARD_INDEX_EP = 122;
-export const BOARD_INDEX_PLYS = 123;
+export const BOARD_INDEX_WHITE_KING = 120;
+export const BOARD_INDEX_BLACK_KING = 121;
+export const BOARD_INDEX_TURN = 122;
+export const BOARD_INDEX_CASTLING = 123;
+export const BOARD_INDEX_EP = 124;
+export const BOARD_INDEX_PLYS = 125;
 
 export const EMPTY = 0;
 export const PAWN = 1;
@@ -55,7 +59,13 @@ function initBoard(boardString: string): Board {
         const p = charBoard[k];
         const boardIndex = ((k >> 3) + 2) * 10 + (k & 7) + 1;
         const i = ASCII_CHARS.indexOf(p);
-        board[boardIndex] = ASCII_PIECES[i];
+        const piece = ASCII_PIECES[i];
+        board[boardIndex] = piece;
+        if (piece === (KING | WHITE)) {
+            board[BOARD_INDEX_WHITE_KING] = boardIndex;
+        } else if (piece === (KING | BLACK)) {
+            board[BOARD_INDEX_BLACK_KING] = boardIndex;
+        }
     }
     return board;
 }

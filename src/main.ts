@@ -1,5 +1,5 @@
-import { initBoardFromFEN, showBoard, Board, PIECE_MASK, BISHOP, KNIGHT, ROOK, QUEEN, KING } from './board';
-import { generateMoves, makeMove, unmakeMove, Move } from './moves';
+import { initBoardFromFEN, showBoard, Board, PIECE_MASK, BISHOP, KNIGHT, ROOK, QUEEN, KING, BOARD_INDEX_TURN, BOARD_INDEX_WHITE_KING, BOARD_INDEX_BLACK_KING, BLACK } from './board';
+import { generateMoves, makeMove, unmakeMove, Move, isAttackedBy } from './moves';
 
 function moveToString(board: Board, move: Move) {
     let prefix = '';
@@ -25,11 +25,16 @@ function perftSub(board: Board, depth: number, showMove: boolean) {
     let result = 0;
     for (const move of moves) {
         makeMove(board, move);
-        const countSub = perftSub(board, depth - 1, false);
-        unmakeMove(board, move);
-        if (showMove)
-            console.log(moveToString(board, move), countSub);
-        result += countSub;
+        const turn = board[BOARD_INDEX_TURN];
+        if (isAttackedBy(board, board[turn === BLACK ? BOARD_INDEX_WHITE_KING : BOARD_INDEX_BLACK_KING], turn)) {
+            unmakeMove(board, move);
+        } else {
+            const countSub = perftSub(board, depth - 1, false);
+            unmakeMove(board, move);
+            if (showMove)
+                console.log(moveToString(board, move), countSub);
+            result += countSub;
+        }
     }
     return result;
 }
