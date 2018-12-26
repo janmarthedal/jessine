@@ -1,7 +1,19 @@
-import { initBoardFromFEN, showBoard, Board } from './board';
-import { generateMoves, makeMove, unmakeMove } from './moves';
+import { initBoardFromFEN, showBoard, Board, PIECE_MASK, BISHOP, KNIGHT, ROOK, QUEEN, KING } from './board';
+import { generateMoves, makeMove, unmakeMove, Move } from './moves';
 
-function subPerft(board: Board, depth: number) {
+function moveToString(board: Board, move: Move) {
+    let prefix = '';
+    switch (board[move[0]] & PIECE_MASK) {
+        case BISHOP: prefix = 'B'; break;
+        case KNIGHT: prefix = 'N'; break;
+        case ROOK: prefix = 'R'; break;
+        case QUEEN: prefix = 'Q'; break;
+        case KING: prefix = 'K'; break;
+    }
+    return prefix + 'abcdefgh'[move[1] % 10 - 1] + (10 - Math.floor(move[1] / 10));
+}
+
+function perftSub(board: Board, depth: number, showMove: boolean) {
     if (depth === 0)
         return 1;
     
@@ -13,8 +25,11 @@ function subPerft(board: Board, depth: number) {
     let result = 0;
     for (const move of moves) {
         makeMove(board, move);
-        result += subPerft(board, depth - 1);
+        const countSub = perftSub(board, depth - 1, false);
         unmakeMove(board, move);
+        if (showMove)
+            console.log(moveToString(board, move), countSub);
+        result += countSub;
     }
     return result;
 }
@@ -22,10 +37,10 @@ function subPerft(board: Board, depth: number) {
 function perft(fen: string, depth: number) {
     const board = initBoardFromFEN(fen);
     showBoard(board);
-    return subPerft(board, depth);
+    return perftSub(board, depth, true);
     
 }
 
-const count = perft('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR', 2);
+const count = perft('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR', 4);
 
 console.log(count);

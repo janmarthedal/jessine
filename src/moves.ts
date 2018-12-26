@@ -61,7 +61,7 @@ export function generateMoves(board: Board): Array<Move> {
                             if (board[pos + 10] === EMPTY) {
                                 addMove(pos + 10, 0, 0);
                                 if (r === 7 && board[pos + 20] === EMPTY) {
-                                    addMove(pos - 20, pos - 10, 0);
+                                    addMove(pos + 20, pos + 10, 0);
                                 }
                             }
                             if ((board[pos + 11] & COLOR_MASK) === WHITE) {
