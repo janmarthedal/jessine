@@ -85,7 +85,23 @@ export function initBoard(fen: string): Board {
     return board;
 }
 
+function fenCastling(castling: number) {
+    let s = '';
+    if ((castling & CASTLING_KING_WHITE) !== 0) s += 'K';
+    if ((castling & CASTLING_QUEEN_WHITE) !== 0) s += 'Q';
+    if ((castling & CASTLING_KING_BLACK) !== 0) s += 'k';
+    if ((castling & CASTLING_QUEEN_BLACK) !== 0) s += 'q';
+    return s.length === 0 ? '-' : s;
+}
+
 export function showBoard(board: Board) {
+    process.stdout.write('   [' + [
+        board[BOARD_INDEX_TURN] === WHITE ? 'w' : 'b',
+        fenCastling(board[BOARD_INDEX_CASTLING]),
+        board[BOARD_INDEX_EP] !== 0 ? posToAlgebraic(board[BOARD_INDEX_EP]) : '-',
+        board[BOARD_INDEX_PLYS].toString()
+    ].join(' ') + ']');
+    process.stdout.write('\n');
     for (let r = 2; r < 10; r++) {
         process.stdout.write((10 - r).toString() + ' ');
         for (let c = 1; c <= 8; c++) {

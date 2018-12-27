@@ -25,25 +25,43 @@ export function generateMoves(board: Board): Array<Move> {
     const thisEP = board[BOARD_INDEX_EP];
     const thisPlys = board[BOARD_INDEX_PLYS];
     const moveData = new Uint8Array(256 * 8);
-    let length = 0;
-    let pos = 21, piece: number, basePiece: number;
+    let length = 0, pos = 21, piece: number, basePiece: number;
 
-    function addMove(to: number, nextEP: number, nextPlys: number) {
-        const captured = board[to];
+    function addMoveBase(to: number, captured: number, promoted: number, nextEP: number, nextCastling: number, nextPlys: number) {
+        if (captured === (ROOK | WHITE)) {
+            if (to === 91 && (thisCastling & CASTLING_QUEEN_WHITE) !== 0) {
+                nextCastling &= ~CASTLING_QUEEN_WHITE;
+            } else if (to === 98 && (thisCastling & CASTLING_KING_WHITE) !== 0) {
+                nextCastling &= ~CASTLING_KING_WHITE;
+            }
+        } else if (captured === (ROOK | BLACK)) {
+            if (to === 21 && (thisCastling & CASTLING_QUEEN_BLACK) !== 0) {
+                nextCastling &= ~CASTLING_QUEEN_BLACK;
+            } else if (to === 28 && (thisCastling & CASTLING_KING_BLACK) !== 0) {
+                nextCastling &= ~CASTLING_KING_BLACK;
+            }
+        }
         moveData.set([
-            pos, to, captured, 0,
-            turnXor, 0, thisEP ^ nextEP, thisPlys ^ nextPlys
+            pos, to, captured, promoted,
+            turnXor, thisCastling ^ nextCastling, thisEP ^ nextEP, thisPlys ^ nextPlys
         ], length);
         length += 8;
     }
 
+    function addMove(to: number, nextEP: number, nextPlys: number) {
+        addMoveBase(to, board[to], 0, nextEP, thisCastling, nextPlys);
+    }
+
+    function addMovePromotion(to: number, promoted: number) {
+        addMoveBase(to, board[to], promoted, 0, thisCastling, 0);
+    }
+
+    function addMoveEP(to: number, captured: number) {
+        addMoveBase(to, captured, 0, 0, thisCastling, 0);
+    }
+
     function addMoveUpdateCastling(to: number, nextCastling: number, nextPlys: number) {
-        const captured = board[to];
-        moveData.set([
-            pos, to, captured, 0,
-            turnXor, thisCastling ^ nextCastling, thisEP ^ 0, thisPlys ^ nextPlys
-        ], length);
-        length += 8;
+        addMoveBase(to, board[to], 0, 0, nextCastling, nextPlys);
     }
 
     for (let r = 8; r >= 1; r--) {
@@ -54,30 +72,84 @@ export function generateMoves(board: Board): Array<Move> {
                 switch (basePiece) {
                     case PAWN:
                         if (thisTurn === WHITE) {
-                            if (board[pos - 10] === EMPTY) {
-                                addMove(pos - 10, 0, 0);
-                                if (r === 2 && board[pos - 20] === EMPTY) {
-                                    addMove(pos - 20, pos - 10, 0);
+                            if (r === 7) {
+                                if (board[pos - 10] === EMPTY) {
+                                    addMovePromotion(pos - 10, BISHOP | WHITE);
+                                    addMovePromotion(pos - 10, KNIGHT | WHITE);
+                                    addMovePromotion(pos - 10, ROOK | WHITE);
+                                    addMovePromotion(pos - 10, QUEEN | WHITE);
                                 }
-                            }
-                            if ((board[pos - 11] & COLOR_MASK) === BLACK || thisEP === pos - 11) {
-                                addMove(pos - 11, 0, 0);
-                            }
-                            if ((board[pos - 9] & COLOR_MASK) === BLACK || thisEP === pos - 9) {
-                                addMove(pos - 9, 0, 0);
+                                if ((board[pos - 11] & COLOR_MASK) === BLACK) {
+                                    addMovePromotion(pos - 11, BISHOP | WHITE);
+                                    addMovePromotion(pos - 11, KNIGHT | WHITE);
+                                    addMovePromotion(pos - 11, ROOK | WHITE);
+                                    addMovePromotion(pos - 11, QUEEN | WHITE);
+                                }
+                                if ((board[pos - 9] & COLOR_MASK) === BLACK) {
+                                    addMovePromotion(pos - 9, BISHOP | WHITE);
+                                    addMovePromotion(pos - 9, KNIGHT | WHITE);
+                                    addMovePromotion(pos - 9, ROOK | WHITE);
+                                    addMovePromotion(pos - 9, QUEEN | WHITE);
+                                }
+                            } else {
+                                if (board[pos - 10] === EMPTY) {
+                                    addMove(pos - 10, 0, 0);
+                                    if (r === 2 && board[pos - 20] === EMPTY) {
+                                        addMove(pos - 20, pos - 10, 0);
+                                    }
+                                }
+                                if ((board[pos - 11] & COLOR_MASK) === BLACK) {
+                                    addMove(pos - 11, 0, 0);
+                                }
+                                if (pos - 11 === thisEP) {
+                                    addMoveEP(pos - 11, PAWN | BLACK);
+                                }
+                                if ((board[pos - 9] & COLOR_MASK) === BLACK) {
+                                    addMove(pos - 9, 0, 0);
+                                }
+                                if (pos - 9 === thisEP) {
+                                    addMoveEP(pos - 9, PAWN | BLACK);
+                                }
                             }
                         } else {
-                            if (board[pos + 10] === EMPTY) {
-                                addMove(pos + 10, 0, 0);
-                                if (r === 7 && board[pos + 20] === EMPTY) {
-                                    addMove(pos + 20, pos + 10, 0);
+                            if (r === 2) {
+                                if (board[pos + 10] === EMPTY) {
+                                    addMovePromotion(pos + 10, BISHOP | BLACK);
+                                    addMovePromotion(pos + 10, KNIGHT | BLACK);
+                                    addMovePromotion(pos + 10, ROOK | BLACK);
+                                    addMovePromotion(pos + 10, QUEEN | BLACK);
                                 }
-                            }
-                            if ((board[pos + 11] & COLOR_MASK) === WHITE || thisEP === pos + 11) {
-                                addMove(pos + 11, 0, 0);
-                            }
-                            if ((board[pos + 9] & COLOR_MASK) === WHITE || thisEP === pos + 9) {
-                                addMove(pos + 9, 0, 0);
+                                if ((board[pos + 11] & COLOR_MASK) === WHITE) {
+                                    addMovePromotion(pos + 11, BISHOP | BLACK);
+                                    addMovePromotion(pos + 11, KNIGHT | BLACK);
+                                    addMovePromotion(pos + 11, ROOK | BLACK);
+                                    addMovePromotion(pos + 11, QUEEN | BLACK);
+                                }
+                                if ((board[pos + 9] & COLOR_MASK) === WHITE) {
+                                    addMovePromotion(pos + 9, BISHOP | BLACK);
+                                    addMovePromotion(pos + 9, KNIGHT | BLACK);
+                                    addMovePromotion(pos + 9, ROOK | BLACK);
+                                    addMovePromotion(pos + 9, QUEEN | BLACK);
+                                }
+                            } else {
+                                if (board[pos + 10] === EMPTY) {
+                                    addMove(pos + 10, 0, 0);
+                                    if (r === 7 && board[pos + 20] === EMPTY) {
+                                        addMove(pos + 20, pos + 10, 0);
+                                    }
+                                }
+                                if ((board[pos + 11] & COLOR_MASK) === WHITE) {
+                                    addMove(pos + 11, 0, 0);
+                                }
+                                if (pos + 11 === thisEP) {
+                                    addMoveEP(pos + 11, PAWN | WHITE);
+                                }
+                                if ((board[pos + 9] & COLOR_MASK) === WHITE) {
+                                    addMove(pos + 9, 0, 0);
+                                }
+                                if (pos + 9 === thisEP) {
+                                    addMoveEP(pos + 9, PAWN | WHITE);
+                                }
                             }
                         }
                         break;
@@ -189,10 +261,14 @@ export function generateMoves(board: Board): Array<Move> {
                                 }
                             }
                             if (!isAttackedBy(board, 95, BLACK)) {
-                                if (board[94] === EMPTY && board[93] === EMPTY && !isAttackedBy(board, 94, BLACK)) {
+                                if ((thisCastling & CASTLING_QUEEN_WHITE) !== 0
+                                        && board[94] === EMPTY && board[93] === EMPTY && board[92] === EMPTY
+                                        && !isAttackedBy(board, 94, BLACK)) {
                                     addMoveUpdateCastling(93, nextCastling, thisPlys + 1);
                                 }
-                                if (board[96] === EMPTY && board[97] === EMPTY && !isAttackedBy(board, 96, BLACK)) {
+                                if ((thisCastling & CASTLING_KING_WHITE) !== 0
+                                        && board[96] === EMPTY && board[97] === EMPTY
+                                        && !isAttackedBy(board, 96, BLACK)) {
                                     addMoveUpdateCastling(97, nextCastling, thisPlys + 1);
                                 }
                             }
@@ -207,10 +283,14 @@ export function generateMoves(board: Board): Array<Move> {
                                 }
                             }
                             if (!isAttackedBy(board, 25, WHITE)) {
-                                if (board[24] === EMPTY && board[23] === EMPTY && !isAttackedBy(board, 24, WHITE)) {
+                                if ((thisCastling & CASTLING_QUEEN_BLACK) !== 0
+                                        && board[24] === EMPTY && board[23] === EMPTY && board[22] === EMPTY
+                                        && !isAttackedBy(board, 24, WHITE)) {
                                     addMoveUpdateCastling(23, nextCastling, thisPlys + 1);
                                 }
-                                if (board[26] === EMPTY && board[27] === EMPTY && !isAttackedBy(board, 26, WHITE)) {
+                                if ((thisCastling & CASTLING_KING_BLACK) !== 0
+                                        && board[26] === EMPTY && board[27] === EMPTY
+                                        && !isAttackedBy(board, 26, WHITE)) {
                                     addMoveUpdateCastling(27, nextCastling, thisPlys + 1);
                                 }
                             }
@@ -292,7 +372,15 @@ export function makeMove(board: Board, move: Move) {
     const promoted = move[3];
     board[to] = promoted || piece;
     board[from] = EMPTY;
-    if (piece === (KING | WHITE)) {
+    if (piece === (PAWN | WHITE)) {
+        if (to === board[BOARD_INDEX_EP]) {
+            board[to + 10] = EMPTY;
+        }
+    } else if (piece === (PAWN | BLACK)) {
+        if (to === board[BOARD_INDEX_EP]) {
+            board[to - 10] = EMPTY;
+        }
+    } else if (piece === (KING | WHITE)) {
         board[BOARD_INDEX_WHITE_KING] = to;
         if (from === 95 && to === 93) {
             board[91] = EMPTY;
@@ -329,7 +417,17 @@ export function unmakeMove(board: Board, move: Move) {
     const piece = promoted ? PAWN | board[BOARD_INDEX_TURN] : board[to];
     board[from] = piece;
     board[to] = captured;
-    if (piece === (KING | WHITE)) {
+    if (piece === (PAWN | WHITE)) {
+        if (to === board[BOARD_INDEX_EP]) {
+            board[to] = EMPTY;
+            board[to + 10] = PAWN | BLACK;
+        }
+    } else if (piece === (PAWN | BLACK)) {
+        if (to === board[BOARD_INDEX_EP]) {
+            board[to] = EMPTY;
+            board[to - 10] = PAWN | WHITE;
+        }
+    } else if (piece === (KING | WHITE)) {
         board[BOARD_INDEX_WHITE_KING] = from;
         if (from === 95 && to === 93) {
             board[91] = ROOK | WHITE;
