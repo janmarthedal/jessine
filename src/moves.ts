@@ -7,7 +7,9 @@ import {
 // 1: to
 // 2: captured
 // 3: promoted
-// 4-8: board state xor
+// 4: castling xor
+// 5: EP xor
+// 6: ply xor
 export type Move = Uint8Array;
 
 const BISHOP_MOVEMENTS = [9, 11, -9, -11];
@@ -20,14 +22,13 @@ const KING_MOVEMENTS = [9, 11, -9, -11, -1, 1, -10, 10];
 export function generateMoves(board: Board): Array<Move> {
     const thisTurn = board[BOARD_INDEX_TURN];
     const nextTurn = thisTurn === WHITE ? BLACK : WHITE;
-    const turnXor = thisTurn ^ nextTurn;
     const thisCastling = board[BOARD_INDEX_CASTLING];
     const thisEP = board[BOARD_INDEX_EP];
     const thisPlys = board[BOARD_INDEX_PLYS];
-    const moveData = new Uint8Array(256 * 8);
+    const moveData = new Uint8Array(256 * 7);
     let length = 0, pos = 21, piece: number, basePiece: number;
 
-    function addMoveBase(to: number, captured: number, promoted: number, nextEP: number, nextCastling: number, nextPlys: number) {
+    function addMoveBase(to: number, captured: number, promoted: number, nextCastling: number, nextPlys: number) {
         if (captured === (ROOK | WHITE)) {
             if (to === 91 && (thisCastling & CASTLING_QUEEN_WHITE) !== 0) {
                 nextCastling &= ~CASTLING_QUEEN_WHITE;
@@ -41,27 +42,29 @@ export function generateMoves(board: Board): Array<Move> {
                 nextCastling &= ~CASTLING_KING_BLACK;
             }
         }
-        moveData.set([
-            pos, to, captured, promoted,
-            turnXor, thisCastling ^ nextCastling, thisEP ^ nextEP, thisPlys ^ nextPlys
-        ], length);
-        length += 8;
+        moveData[length++] = pos;
+        moveData[length++] = to;
+        moveData[length++] = captured;
+        moveData[length++] = promoted;
+        moveData[length++] = thisCastling ^ nextCastling;
+        moveData[length++] = 0;
+        moveData[length++] = thisPlys ^ nextPlys;
     }
 
-    function addMove(to: number, nextEP: number, nextPlys: number) {
-        addMoveBase(to, board[to], 0, nextEP, thisCastling, nextPlys);
+    function addMove(to: number, nextPlys: number) {
+        addMoveBase(to, board[to], 0, thisCastling, nextPlys);
     }
 
     function addMovePromotion(to: number, promoted: number) {
-        addMoveBase(to, board[to], promoted, 0, thisCastling, 0);
+        addMoveBase(to, board[to], promoted, thisCastling, 0);
     }
 
     function addMoveEP(to: number, captured: number) {
-        addMoveBase(to, captured, 0, 0, thisCastling, 0);
+        addMoveBase(to, captured, 0, thisCastling, 0);
     }
 
     function addMoveUpdateCastling(to: number, nextCastling: number, nextPlys: number) {
-        addMoveBase(to, board[to], 0, 0, nextCastling, nextPlys);
+        addMoveBase(to, board[to], 0, nextCastling, nextPlys);
     }
 
     for (let r = 8; r >= 1; r--) {
@@ -93,19 +96,19 @@ export function generateMoves(board: Board): Array<Move> {
                                 }
                             } else {
                                 if (board[pos - 10] === EMPTY) {
-                                    addMove(pos - 10, 0, 0);
+                                    addMove(pos - 10, 0);
                                     if (r === 2 && board[pos - 20] === EMPTY) {
-                                        addMove(pos - 20, pos - 10, 0);
+                                        addMove(pos - 20, 0);
                                     }
                                 }
                                 if ((board[pos - 11] & COLOR_MASK) === BLACK) {
-                                    addMove(pos - 11, 0, 0);
+                                    addMove(pos - 11, 0);
                                 }
                                 if (pos - 11 === thisEP) {
                                     addMoveEP(pos - 11, PAWN | BLACK);
                                 }
                                 if ((board[pos - 9] & COLOR_MASK) === BLACK) {
-                                    addMove(pos - 9, 0, 0);
+                                    addMove(pos - 9, 0);
                                 }
                                 if (pos - 9 === thisEP) {
                                     addMoveEP(pos - 9, PAWN | BLACK);
@@ -133,19 +136,19 @@ export function generateMoves(board: Board): Array<Move> {
                                 }
                             } else {
                                 if (board[pos + 10] === EMPTY) {
-                                    addMove(pos + 10, 0, 0);
+                                    addMove(pos + 10, 0);
                                     if (r === 7 && board[pos + 20] === EMPTY) {
-                                        addMove(pos + 20, pos + 10, 0);
+                                        addMove(pos + 20, 0);
                                     }
                                 }
                                 if ((board[pos + 11] & COLOR_MASK) === WHITE) {
-                                    addMove(pos + 11, 0, 0);
+                                    addMove(pos + 11, 0);
                                 }
                                 if (pos + 11 === thisEP) {
                                     addMoveEP(pos + 11, PAWN | WHITE);
                                 }
                                 if ((board[pos + 9] & COLOR_MASK) === WHITE) {
-                                    addMove(pos + 9, 0, 0);
+                                    addMove(pos + 9, 0);
                                 }
                                 if (pos + 9 === thisEP) {
                                     addMoveEP(pos + 9, PAWN | WHITE);
@@ -157,11 +160,11 @@ export function generateMoves(board: Board): Array<Move> {
                         for (const delta of BISHOP_MOVEMENTS) {
                             let to = pos + delta;
                             while (board[to] === EMPTY) {
-                                addMove(to, 0, thisPlys + 1);
+                                addMove(to, thisPlys + 1);
                                 to += delta;
                             }
                             if ((board[to] & COLOR_MASK) === nextTurn) {
-                                addMove(to, 0, 0);
+                                addMove(to, 0);
                             }
                         }
                         break;
@@ -169,9 +172,9 @@ export function generateMoves(board: Board): Array<Move> {
                         for (const delta of KNIGHT_MOVEMENTS) {
                             const to = pos + delta;
                             if (board[to] === EMPTY) {
-                                addMove(to, 0, thisPlys + 1);
+                                addMove(to, thisPlys + 1);
                             } else if ((board[to] & COLOR_MASK) === nextTurn) {
-                                addMove(to, 0, 0);
+                                addMove(to, 0);
                             }
                         }
                         break;
@@ -228,11 +231,11 @@ export function generateMoves(board: Board): Array<Move> {
                             for (const delta of ROOK_MOVEMENTS) {
                                 let to = pos + delta;
                                 while (board[to] === EMPTY) {
-                                    addMove(to, 0, thisPlys + 1);
+                                    addMove(to, thisPlys + 1);
                                     to += delta;
                                 }
                                 if ((board[to] & COLOR_MASK) === nextTurn) {
-                                    addMove(to, 0, 0);
+                                    addMove(to, 0);
                                 }
                             }
                         }
@@ -241,11 +244,11 @@ export function generateMoves(board: Board): Array<Move> {
                         for (const delta of KING_MOVEMENTS) {
                             let to = pos + delta;
                             while (board[to] === EMPTY) {
-                                addMove(to, 0, thisPlys + 1);
+                                addMove(to, thisPlys + 1);
                                 to += delta;
                             }
                             if ((board[to] & COLOR_MASK) === nextTurn) {
-                                addMove(to, 0, 0);
+                                addMove(to, 0);
                             }
                         }
                         break;
@@ -298,9 +301,9 @@ export function generateMoves(board: Board): Array<Move> {
                             for (const delta of KING_MOVEMENTS) {
                                 const to = pos + delta;
                                 if (board[to] === EMPTY) {
-                                    addMove(to, 0, thisPlys + 1);
+                                    addMove(to, thisPlys + 1);
                                 } else if ((board[to] & COLOR_MASK) === nextTurn) {
-                                    addMove(to, 0, 0);
+                                    addMove(to, 0);
                                 }
                             }
                         }
@@ -314,8 +317,8 @@ export function generateMoves(board: Board): Array<Move> {
 
     const moves: Array<Move> = [];
 
-    for (let offset = 0; offset < length; offset += 8) {
-        moves.push(moveData.subarray(offset, offset + 8));
+    for (let offset = 0; offset < length; offset += 7) {
+        moves.push(moveData.subarray(offset, offset + 7));
     }
 
     return moves;
@@ -372,13 +375,19 @@ export function makeMove(board: Board, move: Move) {
     const promoted = move[3];
     board[to] = promoted || piece;
     board[from] = EMPTY;
+    const thisEP = board[BOARD_INDEX_EP];
+    let nextEP = 0;
     if (piece === (PAWN | WHITE)) {
         if (to === board[BOARD_INDEX_EP]) {
             board[to + 10] = EMPTY;
+        } else if (from - to === 20) {
+            nextEP = from - 10;
         }
     } else if (piece === (PAWN | BLACK)) {
         if (to === board[BOARD_INDEX_EP]) {
             board[to - 10] = EMPTY;
+        } else if (to - from === 20) {
+            nextEP = from + 10;
         }
     } else if (piece === (KING | WHITE)) {
         board[BOARD_INDEX_WHITE_KING] = to;
@@ -399,10 +408,11 @@ export function makeMove(board: Board, move: Move) {
             board[26] = ROOK | BLACK;
         }
     }
-    board[BOARD_INDEX_TURN] ^= move[4];
-    board[BOARD_INDEX_CASTLING] ^= move[5];
-    board[BOARD_INDEX_EP] ^= move[6];
-    board[BOARD_INDEX_PLYS] ^= move[7];
+    move[5] = thisEP ^ nextEP;
+    board[BOARD_INDEX_TURN] = board[BOARD_INDEX_TURN] === WHITE ? BLACK : WHITE;
+    board[BOARD_INDEX_CASTLING] ^= move[4];
+    board[BOARD_INDEX_EP] = nextEP;
+    board[BOARD_INDEX_PLYS] ^= move[6];
 }
 
 export function unmakeMove(board: Board, move: Move) {
@@ -410,10 +420,10 @@ export function unmakeMove(board: Board, move: Move) {
     const to = move[1];
     const captured = move[2];
     const promoted = move[3];
-    board[BOARD_INDEX_TURN] ^= move[4];
-    board[BOARD_INDEX_CASTLING] ^= move[5];
-    board[BOARD_INDEX_EP] ^= move[6];
-    board[BOARD_INDEX_PLYS] ^= move[7];
+    board[BOARD_INDEX_TURN] = board[BOARD_INDEX_TURN] === WHITE ? BLACK : WHITE;
+    board[BOARD_INDEX_CASTLING] ^= move[4];
+    board[BOARD_INDEX_EP] ^= move[5];
+    board[BOARD_INDEX_PLYS] ^= move[6];
     const piece = promoted ? PAWN | board[BOARD_INDEX_TURN] : board[to];
     board[from] = piece;
     board[to] = captured;
