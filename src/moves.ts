@@ -7,15 +7,16 @@ import {
 // 1: to
 // 2: captured
 // 3: promoted
-// 4: castling xor
-// 5: EP xor
-// 6: ply xor
+// 4: from castling
+// 5: from EP
+// 6: from ply
 export type Move = Uint8Array;
 
 const BISHOP_MOVEMENTS = [9, 11, -9, -11];
 const KNIGHT_MOVEMENTS = [-21, -19, 19, 21, -12, -8, 8, 12];
 const ROOK_MOVEMENTS = [-1, 1, -10, 10];
 const KING_MOVEMENTS = [9, 11, -9, -11, -1, 1, -10, 10];
+const PROMOTION_PIECES = [BISHOP, KNIGHT, ROOK, QUEEN];
 
 // maximum number of moves of any position: 218 (http://www.talkchess.com/forum3/viewtopic.php?t=61792)
 
@@ -27,24 +28,6 @@ export function generateMoves(board: Board): Array<Move> {
     const moveData = new Uint8Array(256 * 7);
     let length = 0, pos = 21, piece: number, basePiece: number;
 
-    function addMoveBase(to: number, promoted: number) {
-        moveData[length++] = pos;
-        moveData[length++] = to;
-        moveData[length++] = 0;
-        moveData[length++] = promoted;
-        moveData[length++] = 0;
-        moveData[length++] = 0;
-        moveData[length++] = 0;
-    }
-
-    function addMove(to: number) {
-        addMoveBase(to, 0);
-    }
-
-    function addMovePromotion(to: number, promoted: number) {
-        addMoveBase(to, promoted);
-    }
-
     for (let r = 8; r >= 1; r--) {
         for (let c = 1; c <= 8; c++) {
             piece = board[pos];
@@ -55,69 +38,97 @@ export function generateMoves(board: Board): Array<Move> {
                         if (thisTurn === WHITE) {
                             if (r === 7) {
                                 if (board[pos - 10] === EMPTY) {
-                                    addMovePromotion(pos - 10, BISHOP | WHITE);
-                                    addMovePromotion(pos - 10, KNIGHT | WHITE);
-                                    addMovePromotion(pos - 10, ROOK | WHITE);
-                                    addMovePromotion(pos - 10, QUEEN | WHITE);
+                                    PROMOTION_PIECES.forEach(p => {
+                                        moveData[length++] = pos;
+                                        moveData[length++] = pos - 10;
+                                        moveData[length++] = p | WHITE;
+                                        length += 4;
+                                    });
                                 }
                                 if ((board[pos - 11] & COLOR_MASK) === BLACK) {
-                                    addMovePromotion(pos - 11, BISHOP | WHITE);
-                                    addMovePromotion(pos - 11, KNIGHT | WHITE);
-                                    addMovePromotion(pos - 11, ROOK | WHITE);
-                                    addMovePromotion(pos - 11, QUEEN | WHITE);
+                                    PROMOTION_PIECES.forEach(p => {
+                                        moveData[length++] = pos;
+                                        moveData[length++] = pos - 11;
+                                        moveData[length++] = p | WHITE;
+                                        length += 4;
+                                    });
                                 }
                                 if ((board[pos - 9] & COLOR_MASK) === BLACK) {
-                                    addMovePromotion(pos - 9, BISHOP | WHITE);
-                                    addMovePromotion(pos - 9, KNIGHT | WHITE);
-                                    addMovePromotion(pos - 9, ROOK | WHITE);
-                                    addMovePromotion(pos - 9, QUEEN | WHITE);
+                                    PROMOTION_PIECES.forEach(p => {
+                                        moveData[length++] = pos;
+                                        moveData[length++] = pos - 9;
+                                        moveData[length++] = p | WHITE;
+                                        length += 4;
+                                    });
                                 }
                             } else {
                                 if (board[pos - 10] === EMPTY) {
-                                    addMove(pos - 10);
+                                    moveData[length++] = pos;
+                                    moveData[length++] = pos - 10;
+                                    length += 5;
                                     if (r === 2 && board[pos - 20] === EMPTY) {
-                                        addMove(pos - 20);
+                                        moveData[length++] = pos;
+                                        moveData[length++] = pos - 20;
+                                        length += 5;
                                     }
                                 }
                                 if ((board[pos - 11] & COLOR_MASK) === BLACK || pos - 11 === thisEP) {
-                                    addMove(pos - 11);
+                                    moveData[length++] = pos;
+                                    moveData[length++] = pos - 11;
+                                    length += 5;
                                 }
                                 if ((board[pos - 9] & COLOR_MASK) === BLACK || pos - 9 === thisEP) {
-                                    addMove(pos - 9);
+                                    moveData[length++] = pos;
+                                    moveData[length++] = pos - 9;
+                                    length += 5;
                                 }
                             }
                         } else {
                             if (r === 2) {
                                 if (board[pos + 10] === EMPTY) {
-                                    addMovePromotion(pos + 10, BISHOP | BLACK);
-                                    addMovePromotion(pos + 10, KNIGHT | BLACK);
-                                    addMovePromotion(pos + 10, ROOK | BLACK);
-                                    addMovePromotion(pos + 10, QUEEN | BLACK);
+                                    PROMOTION_PIECES.forEach(p => {
+                                        moveData[length++] = pos;
+                                        moveData[length++] = pos + 10;
+                                        moveData[length++] = p | BLACK;
+                                        length += 4;
+                                    });
                                 }
                                 if ((board[pos + 11] & COLOR_MASK) === WHITE) {
-                                    addMovePromotion(pos + 11, BISHOP | BLACK);
-                                    addMovePromotion(pos + 11, KNIGHT | BLACK);
-                                    addMovePromotion(pos + 11, ROOK | BLACK);
-                                    addMovePromotion(pos + 11, QUEEN | BLACK);
+                                    PROMOTION_PIECES.forEach(p => {
+                                        moveData[length++] = pos;
+                                        moveData[length++] = pos + 11;
+                                        moveData[length++] = p | BLACK;
+                                        length += 4;
+                                    });
                                 }
                                 if ((board[pos + 9] & COLOR_MASK) === WHITE) {
-                                    addMovePromotion(pos + 9, BISHOP | BLACK);
-                                    addMovePromotion(pos + 9, KNIGHT | BLACK);
-                                    addMovePromotion(pos + 9, ROOK | BLACK);
-                                    addMovePromotion(pos + 9, QUEEN | BLACK);
+                                    PROMOTION_PIECES.forEach(p => {
+                                        moveData[length++] = pos;
+                                        moveData[length++] = pos + 9;
+                                        moveData[length++] = p | BLACK;
+                                        length += 4;
+                                    });
                                 }
                             } else {
                                 if (board[pos + 10] === EMPTY) {
-                                    addMove(pos + 10);
+                                    moveData[length++] = pos;
+                                    moveData[length++] = pos + 10;
+                                    length += 5;
                                     if (r === 7 && board[pos + 20] === EMPTY) {
-                                        addMove(pos + 20);
+                                        moveData[length++] = pos;
+                                        moveData[length++] = pos + 20;
+                                        length += 5;
                                     }
                                 }
                                 if ((board[pos + 11] & COLOR_MASK) === WHITE || pos + 11 === thisEP) {
-                                    addMove(pos + 11);
+                                    moveData[length++] = pos;
+                                    moveData[length++] = pos + 11;
+                                    length += 5;
                                 }
                                 if ((board[pos + 9] & COLOR_MASK) === WHITE || pos + 9 === thisEP) {
-                                    addMove(pos + 9);
+                                    moveData[length++] = pos;
+                                    moveData[length++] = pos + 9;
+                                    length += 5;
                                 }
                             }
                         }
@@ -126,11 +137,15 @@ export function generateMoves(board: Board): Array<Move> {
                         for (const delta of BISHOP_MOVEMENTS) {
                             let to = pos + delta;
                             while (board[to] === EMPTY) {
-                                addMove(to);
+                                moveData[length++] = pos;
+                                moveData[length++] = to;
+                                length += 5;
                                 to += delta;
                             }
                             if ((board[to] & COLOR_MASK) === nextTurn) {
-                                addMove(to);
+                                moveData[length++] = pos;
+                                moveData[length++] = to;
+                                length += 5;
                             }
                         }
                         break;
@@ -138,9 +153,13 @@ export function generateMoves(board: Board): Array<Move> {
                         for (const delta of KNIGHT_MOVEMENTS) {
                             const to = pos + delta;
                             if (board[to] === EMPTY) {
-                                addMove(to);
+                                moveData[length++] = pos;
+                                moveData[length++] = to;
+                                length += 5;
                             } else if ((board[to] & COLOR_MASK) === nextTurn) {
-                                addMove(to);
+                                moveData[length++] = pos;
+                                moveData[length++] = to;
+                                length += 5;
                             }
                         }
                         break;
@@ -148,11 +167,15 @@ export function generateMoves(board: Board): Array<Move> {
                         for (const delta of ROOK_MOVEMENTS) {
                             let to = pos + delta;
                             while (board[to] === EMPTY) {
-                                addMove(to);
+                                moveData[length++] = pos;
+                                moveData[length++] = to;
+                                length += 5;
                                 to += delta;
                             }
                             if ((board[to] & COLOR_MASK) === nextTurn) {
-                                addMove(to);
+                                moveData[length++] = pos;
+                                moveData[length++] = to;
+                                length += 5;
                             }
                         }
                         break;
@@ -160,11 +183,15 @@ export function generateMoves(board: Board): Array<Move> {
                         for (const delta of KING_MOVEMENTS) {
                             let to = pos + delta;
                             while (board[to] === EMPTY) {
-                                addMove(to);
+                                moveData[length++] = pos;
+                                moveData[length++] = to;
+                                length += 5;
                                 to += delta;
                             }
                             if ((board[to] & COLOR_MASK) === nextTurn) {
-                                addMove(to);
+                                moveData[length++] = pos;
+                                moveData[length++] = to;
+                                length += 5;
                             }
                         }
                         break;
@@ -174,32 +201,44 @@ export function generateMoves(board: Board): Array<Move> {
                             if ((thisCastling & CASTLING_QUEEN_WHITE) !== 0
                                     && board[94] === EMPTY && board[93] === EMPTY && board[92] === EMPTY
                                     && !isAttackedBy(board, 94, BLACK)) {
-                                addMove(93);
+                                moveData[length++] = pos;
+                                moveData[length++] = 93;
+                                length += 5;
                             }
                             if ((thisCastling & CASTLING_KING_WHITE) !== 0
                                     && board[96] === EMPTY && board[97] === EMPTY
                                     && !isAttackedBy(board, 96, BLACK)) {
-                                addMove(97);
+                                moveData[length++] = pos;
+                                moveData[length++] = 97;
+                                length += 5;
                             }
                         } else if (pos === 25 && (thisCastling & (CASTLING_QUEEN_BLACK | CASTLING_KING_BLACK)) !== 0
                                 && !isAttackedBy(board, 25, WHITE)) {
                             if ((thisCastling & CASTLING_QUEEN_BLACK) !== 0
                                     && board[24] === EMPTY && board[23] === EMPTY && board[22] === EMPTY
                                     && !isAttackedBy(board, 24, WHITE)) {
-                                addMove(23);
+                                moveData[length++] = pos;
+                                moveData[length++] = 23;
+                                length += 5;
                             }
                             if ((thisCastling & CASTLING_KING_BLACK) !== 0
                                     && board[26] === EMPTY && board[27] === EMPTY
                                     && !isAttackedBy(board, 26, WHITE)) {
-                                addMove(27);
+                                moveData[length++] = pos;
+                                moveData[length++] = 27;
+                                length += 5;
                             }
                         }
                         for (const delta of KING_MOVEMENTS) {
                             const to = pos + delta;
                             if (board[to] === EMPTY) {
-                                addMove(to);
+                                moveData[length++] = pos;
+                                moveData[length++] = to;
+                                length += 5;
                             } else if ((board[to] & COLOR_MASK) === nextTurn) {
-                                addMove(to);
+                                moveData[length++] = pos;
+                                moveData[length++] = to;
+                                length += 5;
                             }
                         }
                         break;
@@ -223,8 +262,8 @@ export function makeMove(board: Board, move: Move) {
     const from = move[0];
     const to = move[1];
     const piece = board[from];
-    const captured = move[2] = board[to];
-    const promoted = move[3];
+    const promoted = move[2];
+    const captured = move[3] = board[to];
     board[to] = promoted || piece;
     board[from] = EMPTY;
     const thisEP = board[BOARD_INDEX_EP];
@@ -233,9 +272,10 @@ export function makeMove(board: Board, move: Move) {
     let nextPly = captured === EMPTY ? thisPly + 1 : 0;
     const thisCastling = board[BOARD_INDEX_CASTLING];
     let nextCastling = thisCastling;
+
     switch (piece) {
         case PAWN | WHITE:
-            if (to === board[BOARD_INDEX_EP]) {
+            if (to === thisEP) {
                 board[to + 10] = EMPTY;
             } else if (from - to === 20) {
                 nextEP = from - 10;
@@ -243,7 +283,7 @@ export function makeMove(board: Board, move: Move) {
             nextPly = 0;
             break;
         case PAWN | BLACK:
-            if (to === board[BOARD_INDEX_EP]) {
+            if (to === thisEP) {
                 board[to - 10] = EMPTY;
             } else if (to - from === 20) {
                 nextEP = from + 10;
@@ -306,9 +346,9 @@ export function makeMove(board: Board, move: Move) {
         }
     }
 
-    move[4] = thisCastling ^ nextCastling;
-    move[5] = thisEP ^ nextEP;
-    move[6] = thisPly ^ nextPly;
+    move[4] = thisCastling;
+    move[5] = thisEP;
+    move[6] = thisPly;
     board[BOARD_INDEX_TURN] = board[BOARD_INDEX_TURN] === WHITE ? BLACK : WHITE;
     board[BOARD_INDEX_CASTLING] = nextCastling;
     board[BOARD_INDEX_EP] = nextEP;
@@ -318,41 +358,47 @@ export function makeMove(board: Board, move: Move) {
 export function unmakeMove(board: Board, move: Move) {
     const from = move[0];
     const to = move[1];
-    const captured = move[2];
-    const promoted = move[3];
+    const promoted = move[2];
+    const captured = move[3];
     board[BOARD_INDEX_TURN] = board[BOARD_INDEX_TURN] === WHITE ? BLACK : WHITE;
-    board[BOARD_INDEX_CASTLING] ^= move[4];
-    board[BOARD_INDEX_EP] ^= move[5];
-    board[BOARD_INDEX_PLYS] ^= move[6];
+    board[BOARD_INDEX_CASTLING] = move[4];
+    board[BOARD_INDEX_EP] = move[5];
+    board[BOARD_INDEX_PLYS] = move[6];
     const piece = promoted ? PAWN | board[BOARD_INDEX_TURN] : board[to];
     board[from] = piece;
     board[to] = captured;
-    if (piece === (PAWN | WHITE)) {
-        if (to === board[BOARD_INDEX_EP]) {
-            board[to + 10] = PAWN | BLACK;
-        }
-    } else if (piece === (PAWN | BLACK)) {
-        if (to === board[BOARD_INDEX_EP]) {
-            board[to - 10] = PAWN | WHITE;
-        }
-    } else if (piece === (KING | WHITE)) {
-        board[BOARD_INDEX_WHITE_KING] = from;
-        if (from === 95 && to === 93) {
-            board[91] = ROOK | WHITE;
-            board[94] = EMPTY;
-        } else if (from === 95 && to === 97) {
-            board[98] = ROOK | WHITE;
-            board[96] = EMPTY;
-        }
-    } else if (piece === (KING | BLACK)) {
-        board[BOARD_INDEX_BLACK_KING] = from;
-        if (from === 25 && to === 23) {
-            board[21] = ROOK | BLACK;
-            board[24] = EMPTY;
-        } else if (from === 25 && to === 27) {
-            board[28] = ROOK | BLACK;
-            board[26] = EMPTY;
-        }
+
+    switch (piece) {
+        case PAWN | WHITE:
+            if (to === board[BOARD_INDEX_EP]) {
+                board[to + 10] = PAWN | BLACK;
+            }
+            break;
+        case PAWN | BLACK:
+            if (to === board[BOARD_INDEX_EP]) {
+                board[to - 10] = PAWN | WHITE;
+            }
+            break;
+        case KING | WHITE:
+            board[BOARD_INDEX_WHITE_KING] = from;
+            if (from === 95 && to === 93) {
+                board[91] = ROOK | WHITE;
+                board[94] = EMPTY;
+            } else if (from === 95 && to === 97) {
+                board[98] = ROOK | WHITE;
+                board[96] = EMPTY;
+            }
+            break;
+        case KING | BLACK:
+            board[BOARD_INDEX_BLACK_KING] = from;
+            if (from === 25 && to === 23) {
+                board[21] = ROOK | BLACK;
+                board[24] = EMPTY;
+            } else if (from === 25 && to === 27) {
+                board[28] = ROOK | BLACK;
+                board[26] = EMPTY;
+            }
+            break;
     }
 }
 
