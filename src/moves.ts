@@ -27,14 +27,14 @@ export function generateMoves(board: Board): Array<Move> {
     const moveData = new Uint8Array(256 * 7);
     let length = 0, pos = 21, piece: number, basePiece: number;
 
-    function addMoveBase(to: number, captured: number, promoted: number, nextCastling: number) {
-        if (captured === (ROOK | WHITE)) {
+    function addMoveBase(to: number, promoted: number, nextCastling: number) {
+        if (board[to] === (ROOK | WHITE)) {
             if (to === 91 && (thisCastling & CASTLING_QUEEN_WHITE) !== 0) {
                 nextCastling &= ~CASTLING_QUEEN_WHITE;
             } else if (to === 98 && (thisCastling & CASTLING_KING_WHITE) !== 0) {
                 nextCastling &= ~CASTLING_KING_WHITE;
             }
-        } else if (captured === (ROOK | BLACK)) {
+        } else if (board[to] === (ROOK | BLACK)) {
             if (to === 21 && (thisCastling & CASTLING_QUEEN_BLACK) !== 0) {
                 nextCastling &= ~CASTLING_QUEEN_BLACK;
             } else if (to === 28 && (thisCastling & CASTLING_KING_BLACK) !== 0) {
@@ -43,7 +43,7 @@ export function generateMoves(board: Board): Array<Move> {
         }
         moveData[length++] = pos;
         moveData[length++] = to;
-        moveData[length++] = captured;
+        moveData[length++] = 0;
         moveData[length++] = promoted;
         moveData[length++] = thisCastling ^ nextCastling;
         moveData[length++] = 0;
@@ -51,19 +51,15 @@ export function generateMoves(board: Board): Array<Move> {
     }
 
     function addMove(to: number) {
-        addMoveBase(to, board[to], 0, thisCastling);
+        addMoveBase(to, 0, thisCastling);
     }
 
     function addMovePromotion(to: number, promoted: number) {
-        addMoveBase(to, board[to], promoted, thisCastling);
-    }
-
-    function addMoveEP(to: number, captured: number) {
-        addMoveBase(to, captured, 0, thisCastling);
+        addMoveBase(to, promoted, thisCastling);
     }
 
     function addMoveUpdateCastling(to: number, nextCastling: number) {
-        addMoveBase(to, board[to], 0, nextCastling);
+        addMoveBase(to, 0, nextCastling);
     }
 
     for (let r = 8; r >= 1; r--) {
@@ -100,17 +96,11 @@ export function generateMoves(board: Board): Array<Move> {
                                         addMove(pos - 20);
                                     }
                                 }
-                                if ((board[pos - 11] & COLOR_MASK) === BLACK) {
+                                if ((board[pos - 11] & COLOR_MASK) === BLACK || pos - 11 === thisEP) {
                                     addMove(pos - 11);
                                 }
-                                if (pos - 11 === thisEP) {
-                                    addMoveEP(pos - 11, PAWN | BLACK);
-                                }
-                                if ((board[pos - 9] & COLOR_MASK) === BLACK) {
+                                if ((board[pos - 9] & COLOR_MASK) === BLACK || pos - 9 === thisEP) {
                                     addMove(pos - 9);
-                                }
-                                if (pos - 9 === thisEP) {
-                                    addMoveEP(pos - 9, PAWN | BLACK);
                                 }
                             }
                         } else {
@@ -140,17 +130,11 @@ export function generateMoves(board: Board): Array<Move> {
                                         addMove(pos + 20);
                                     }
                                 }
-                                if ((board[pos + 11] & COLOR_MASK) === WHITE) {
+                                if ((board[pos + 11] & COLOR_MASK) === WHITE || pos + 11 === thisEP) {
                                     addMove(pos + 11);
                                 }
-                                if (pos + 11 === thisEP) {
-                                    addMoveEP(pos + 11, PAWN | WHITE);
-                                }
-                                if ((board[pos + 9] & COLOR_MASK) === WHITE) {
+                                if ((board[pos + 9] & COLOR_MASK) === WHITE || pos + 9 === thisEP) {
                                     addMove(pos + 9);
-                                }
-                                if (pos + 9 === thisEP) {
-                                    addMoveEP(pos + 9, PAWN | WHITE);
                                 }
                             }
                         }
@@ -368,9 +352,9 @@ export function isAttackedBy(board: Board, pos: number, color: number): boolean 
 
 export function makeMove(board: Board, move: Move) {
     const from = move[0];
-    const piece = board[from];
     const to = move[1];
-    const captured = move[2];
+    const piece = board[from];
+    const captured = move[2] = board[to];
     const promoted = move[3];
     board[to] = promoted || piece;
     board[from] = EMPTY;
@@ -433,12 +417,10 @@ export function unmakeMove(board: Board, move: Move) {
     board[to] = captured;
     if (piece === (PAWN | WHITE)) {
         if (to === board[BOARD_INDEX_EP]) {
-            board[to] = EMPTY;
             board[to + 10] = PAWN | BLACK;
         }
     } else if (piece === (PAWN | BLACK)) {
         if (to === board[BOARD_INDEX_EP]) {
-            board[to] = EMPTY;
             board[to - 10] = PAWN | WHITE;
         }
     } else if (piece === (KING | WHITE)) {
