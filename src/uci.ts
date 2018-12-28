@@ -1,6 +1,6 @@
 import { createInterface } from 'readline';
-import { openSync, writeSync } from 'fs';
-import { Board, initBoard } from './board';
+import { openSync, writeSync, closeSync } from 'fs';
+import { Board, initBoard, PIECE_MASK } from './board';
 import { algebraicToMove, Move, generateMoves, makeMove, unmakeMove, moveToAlgebraic } from './moves';
 
 const logFD = openSync('./log.txt', 'w');
@@ -34,9 +34,10 @@ function generateLegalMoves(board: Board): Array<Move> {
 }
 
 function makeMoveAlgebraic(board: Board, moveStr: string) {
-    const { from, to } = algebraicToMove(moveStr);
+    const { from, to, promoted } = algebraicToMove(moveStr);
     const moves = generateLegalMoves(board);
-    const moveMatches = moves.filter(move => move[0] === from && move[1] === to);
+    const moveMatches = moves.filter(move =>
+        move[0] === from && move[1] === to && (!promoted || promoted === (move[2] & PIECE_MASK)));
     if (moveMatches.length !== 1) {
         debug(`from ${from} to ${to}`);
         debug(`${moves.length} moves`);
@@ -59,18 +60,28 @@ rl.on('line', (input: string) => {
     } else if (items[0] == 'isready') {
         output('readyok');
     } else if (items[0] == 'position') {
-        // position startpos
-        // position startpos moves e2e4 e7e5
-        const fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0';
+        let fen: string, movesIndex: number;
+        if (items[1] == 'startpos') {
+            // position startpos
+            // position startpos moves e2e4 e7e5
+            fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0';
+            movesIndex = 2;
+        } /*else if (items[1] == 'fen') {
+            //items.
+        }*/ else {
+            debug('position: unknown');
+            process.exit(1);
+        }
         board = initBoard(fen);
-        if (items.length >= 3 && items[2] == 'moves') {
-            for (let k = 3; k < items.length; k++) {
+        if (items.length > movesIndex && items[movesIndex] == 'moves') {
+            for (let k = movesIndex + 1; k < items.length; k++) {
                 makeMoveAlgebraic(board, items[k]);
             }
         }
     } else if (items[0] == 'go') {
         const moves = generateLegalMoves(board);
         if (moves.length === 0) {
+            debug('go: no legal moves');
             process.exit(1);
         }
         const move = moves[Math.floor(moves.length * Math.random())];
@@ -79,5 +90,6 @@ rl.on('line', (input: string) => {
 });
 
 rl.on('close', () => {
-    writeSync(logFD, '- closed');
+    debug('input stream closed');
+    closeSync(logFD);
 });

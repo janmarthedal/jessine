@@ -441,12 +441,41 @@ export function isAttackedBy(board: Board, pos: number, color: number): boolean 
 }
 
 export function moveToAlgebraic(move: Move) {
-    return posToAlgebraic(move[0]) + posToAlgebraic(move[1]);
+    let promotion = '';
+    switch (move[2] & PIECE_MASK) {
+        case BISHOP:
+            promotion = 'b';
+            break;
+        case KNIGHT:
+            promotion = 'n';
+            break;
+        case ROOK:
+            promotion = 'r';
+            break;
+        case QUEEN:
+            promotion = 'q';
+            break;
+    }
+    return posToAlgebraic(move[0]) + posToAlgebraic(move[1]) + promotion;
 }
 
 export function algebraicToMove(s: string) {
+    let promoted = undefined;
+    if (s.length === 5) {
+        const pieceStr = s.substr(4, 1).toLowerCase();
+        if (pieceStr == 'b') {
+            promoted = BISHOP;
+        } else if (pieceStr == 'n') {
+            promoted = KNIGHT;
+        } else if (pieceStr == 'r') {
+            promoted = ROOK;
+        } else if (pieceStr == 'q') {
+            promoted = QUEEN;
+        }
+    }
     return {
         from: algebraicToPos(s.substr(0, 2)),
-        to: algebraicToPos(s.substr(2, 2))
+        to: algebraicToPos(s.substr(2, 2)),
+        promoted
     };
 }
