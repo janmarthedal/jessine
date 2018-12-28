@@ -27,39 +27,22 @@ export function generateMoves(board: Board): Array<Move> {
     const moveData = new Uint8Array(256 * 7);
     let length = 0, pos = 21, piece: number, basePiece: number;
 
-    function addMoveBase(to: number, promoted: number, nextCastling: number) {
-        if (board[to] === (ROOK | WHITE)) {
-            if (to === 91 && (thisCastling & CASTLING_QUEEN_WHITE) !== 0) {
-                nextCastling &= ~CASTLING_QUEEN_WHITE;
-            } else if (to === 98 && (thisCastling & CASTLING_KING_WHITE) !== 0) {
-                nextCastling &= ~CASTLING_KING_WHITE;
-            }
-        } else if (board[to] === (ROOK | BLACK)) {
-            if (to === 21 && (thisCastling & CASTLING_QUEEN_BLACK) !== 0) {
-                nextCastling &= ~CASTLING_QUEEN_BLACK;
-            } else if (to === 28 && (thisCastling & CASTLING_KING_BLACK) !== 0) {
-                nextCastling &= ~CASTLING_KING_BLACK;
-            }
-        }
+    function addMoveBase(to: number, promoted: number) {
         moveData[length++] = pos;
         moveData[length++] = to;
         moveData[length++] = 0;
         moveData[length++] = promoted;
-        moveData[length++] = thisCastling ^ nextCastling;
+        moveData[length++] = 0;
         moveData[length++] = 0;
         moveData[length++] = 0;
     }
 
     function addMove(to: number) {
-        addMoveBase(to, 0, thisCastling);
+        addMoveBase(to, 0);
     }
 
     function addMovePromotion(to: number, promoted: number) {
-        addMoveBase(to, promoted, thisCastling);
-    }
-
-    function addMoveUpdateCastling(to: number, nextCastling: number) {
-        addMoveBase(to, 0, nextCastling);
+        addMoveBase(to, promoted);
     }
 
     for (let r = 8; r >= 1; r--) {
@@ -162,64 +145,14 @@ export function generateMoves(board: Board): Array<Move> {
                         }
                         break;
                     case ROOK:
-                        if (pos === 91 && (thisCastling & CASTLING_QUEEN_WHITE) !== 0) {
-                            const nextCastling = thisCastling & ~CASTLING_QUEEN_WHITE;
-                            for (const delta of ROOK_MOVEMENTS) {
-                                let to = pos + delta;
-                                while (board[to] === EMPTY) {
-                                    addMoveUpdateCastling(to, nextCastling);
-                                    to += delta;
-                                }
-                                if ((board[to] & COLOR_MASK) === nextTurn) {
-                                    addMoveUpdateCastling(to, nextCastling);
-                                }
+                        for (const delta of ROOK_MOVEMENTS) {
+                            let to = pos + delta;
+                            while (board[to] === EMPTY) {
+                                addMove(to);
+                                to += delta;
                             }
-                        } else if (pos === 98 && (thisCastling & CASTLING_KING_WHITE) !== 0) {
-                            const nextCastling = thisCastling & ~CASTLING_KING_WHITE;
-                            for (const delta of ROOK_MOVEMENTS) {
-                                let to = pos + delta;
-                                while (board[to] === EMPTY) {
-                                    addMoveUpdateCastling(to, nextCastling);
-                                    to += delta;
-                                }
-                                if ((board[to] & COLOR_MASK) === nextTurn) {
-                                    addMoveUpdateCastling(to, nextCastling);
-                                }
-                            }
-                        } else if (pos === 21 && (thisCastling & CASTLING_QUEEN_BLACK) !== 0) {
-                            const nextCastling = thisCastling & ~CASTLING_QUEEN_BLACK;
-                            for (const delta of ROOK_MOVEMENTS) {
-                                let to = pos + delta;
-                                while (board[to] === EMPTY) {
-                                    addMoveUpdateCastling(to, nextCastling);
-                                    to += delta;
-                                }
-                                if ((board[to] & COLOR_MASK) === nextTurn) {
-                                    addMoveUpdateCastling(to, nextCastling);
-                                }
-                            }
-                        } else if (pos === 28 && (thisCastling & CASTLING_KING_BLACK) !== 0) {
-                            const nextCastling = thisCastling & ~CASTLING_KING_BLACK;
-                            for (const delta of ROOK_MOVEMENTS) {
-                                let to = pos + delta;
-                                while (board[to] === EMPTY) {
-                                    addMoveUpdateCastling(to, nextCastling);
-                                    to += delta;
-                                }
-                                if ((board[to] & COLOR_MASK) === nextTurn) {
-                                    addMoveUpdateCastling(to, nextCastling);
-                                }
-                            }
-                        } else {
-                            for (const delta of ROOK_MOVEMENTS) {
-                                let to = pos + delta;
-                                while (board[to] === EMPTY) {
-                                    addMove(to);
-                                    to += delta;
-                                }
-                                if ((board[to] & COLOR_MASK) === nextTurn) {
-                                    addMove(to);
-                                }
+                            if ((board[to] & COLOR_MASK) === nextTurn) {
+                                addMove(to);
                             }
                         }
                         break;
@@ -236,58 +169,37 @@ export function generateMoves(board: Board): Array<Move> {
                         }
                         break;
                     case KING:
-                        if (pos === 95 && (thisCastling & (CASTLING_QUEEN_WHITE | CASTLING_KING_WHITE)) !== 0) {
-                            const nextCastling = thisCastling & ~(CASTLING_QUEEN_WHITE | CASTLING_KING_WHITE);
-                            for (const delta of KING_MOVEMENTS) {
-                                const to = pos + delta;
-                                if (board[to] === EMPTY) {
-                                    addMoveUpdateCastling(to, nextCastling);
-                                } else if ((board[to] & COLOR_MASK) === nextTurn) {
-                                    addMoveUpdateCastling(to, nextCastling);
-                                }
+                        if (pos === 95 && (thisCastling & (CASTLING_QUEEN_WHITE | CASTLING_KING_WHITE)) !== 0
+                                && !isAttackedBy(board, 95, BLACK)) {
+                            if ((thisCastling & CASTLING_QUEEN_WHITE) !== 0
+                                    && board[94] === EMPTY && board[93] === EMPTY && board[92] === EMPTY
+                                    && !isAttackedBy(board, 94, BLACK)) {
+                                addMove(93);
                             }
-                            if (!isAttackedBy(board, 95, BLACK)) {
-                                if ((thisCastling & CASTLING_QUEEN_WHITE) !== 0
-                                        && board[94] === EMPTY && board[93] === EMPTY && board[92] === EMPTY
-                                        && !isAttackedBy(board, 94, BLACK)) {
-                                    addMoveUpdateCastling(93, nextCastling);
-                                }
-                                if ((thisCastling & CASTLING_KING_WHITE) !== 0
-                                        && board[96] === EMPTY && board[97] === EMPTY
-                                        && !isAttackedBy(board, 96, BLACK)) {
-                                    addMoveUpdateCastling(97, nextCastling);
-                                }
+                            if ((thisCastling & CASTLING_KING_WHITE) !== 0
+                                    && board[96] === EMPTY && board[97] === EMPTY
+                                    && !isAttackedBy(board, 96, BLACK)) {
+                                addMove(97);
                             }
-                        } else if (pos === 25 && (thisCastling & (CASTLING_QUEEN_BLACK | CASTLING_KING_BLACK)) !== 0) {
-                            const nextCastling = thisCastling & ~(CASTLING_QUEEN_BLACK | CASTLING_KING_BLACK);
-                            for (const delta of KING_MOVEMENTS) {
-                                const to = pos + delta;
-                                if (board[to] === EMPTY) {
-                                    addMoveUpdateCastling(to, nextCastling);
-                                } else if ((board[to] & COLOR_MASK) === nextTurn) {
-                                    addMoveUpdateCastling(to, nextCastling);
-                                }
+                        } else if (pos === 25 && (thisCastling & (CASTLING_QUEEN_BLACK | CASTLING_KING_BLACK)) !== 0
+                                && !isAttackedBy(board, 25, WHITE)) {
+                            if ((thisCastling & CASTLING_QUEEN_BLACK) !== 0
+                                    && board[24] === EMPTY && board[23] === EMPTY && board[22] === EMPTY
+                                    && !isAttackedBy(board, 24, WHITE)) {
+                                addMove(23);
                             }
-                            if (!isAttackedBy(board, 25, WHITE)) {
-                                if ((thisCastling & CASTLING_QUEEN_BLACK) !== 0
-                                        && board[24] === EMPTY && board[23] === EMPTY && board[22] === EMPTY
-                                        && !isAttackedBy(board, 24, WHITE)) {
-                                    addMoveUpdateCastling(23, nextCastling);
-                                }
-                                if ((thisCastling & CASTLING_KING_BLACK) !== 0
-                                        && board[26] === EMPTY && board[27] === EMPTY
-                                        && !isAttackedBy(board, 26, WHITE)) {
-                                    addMoveUpdateCastling(27, nextCastling);
-                                }
+                            if ((thisCastling & CASTLING_KING_BLACK) !== 0
+                                    && board[26] === EMPTY && board[27] === EMPTY
+                                    && !isAttackedBy(board, 26, WHITE)) {
+                                addMove(27);
                             }
-                        } else {
-                            for (const delta of KING_MOVEMENTS) {
-                                const to = pos + delta;
-                                if (board[to] === EMPTY) {
-                                    addMove(to);
-                                } else if ((board[to] & COLOR_MASK) === nextTurn) {
-                                    addMove(to);
-                                }
+                        }
+                        for (const delta of KING_MOVEMENTS) {
+                            const to = pos + delta;
+                            if (board[to] === EMPTY) {
+                                addMove(to);
+                            } else if ((board[to] & COLOR_MASK) === nextTurn) {
+                                addMove(to);
                             }
                         }
                         break;
@@ -307,49 +219,6 @@ export function generateMoves(board: Board): Array<Move> {
     return moves;
 }
 
-export function isAttackedBy(board: Board, pos: number, color: number): boolean {
-    if (color === WHITE) {
-        if (board[pos + 9] === (PAWN | WHITE) || board[pos + 11] === (PAWN | WHITE))
-            return true;
-    } else {
-        if (board[pos - 9] === (PAWN | BLACK) || board[pos - 11] === (PAWN | BLACK))
-            return true;
-    }
-    for (const delta of BISHOP_MOVEMENTS) {
-        let from = pos + delta;
-        while (board[from] === EMPTY) {
-            from += delta;
-        }
-        if (board[from] === (BISHOP | color))
-            return true;
-    }
-    for (const delta of KNIGHT_MOVEMENTS) {
-        if (board[pos + delta] === (KNIGHT | color))
-            return true;
-    }
-    for (const delta of ROOK_MOVEMENTS) {
-        let from = pos + delta;
-        while (board[from] === EMPTY) {
-            from += delta;
-        }
-        if (board[from] === (ROOK | color))
-            return true;
-    }
-    for (const delta of KING_MOVEMENTS) {
-        let from = pos + delta;
-        while (board[from] === EMPTY) {
-            from += delta;
-        }
-        if (board[from] === (QUEEN | color))
-            return true;
-    }
-    for (const delta of KING_MOVEMENTS) {
-        if (board[pos + delta] === (KING | color))
-            return true;
-    }
-    return false;
-}
-
 export function makeMove(board: Board, move: Move) {
     const from = move[0];
     const to = move[1];
@@ -362,43 +231,86 @@ export function makeMove(board: Board, move: Move) {
     let nextEP = 0;
     const thisPly = board[BOARD_INDEX_PLYS];
     let nextPly = captured === EMPTY ? thisPly + 1 : 0;
-    if (piece === (PAWN | WHITE)) {
-        if (to === board[BOARD_INDEX_EP]) {
-            board[to + 10] = EMPTY;
-        } else if (from - to === 20) {
-            nextEP = from - 10;
+    const thisCastling = board[BOARD_INDEX_CASTLING];
+    let nextCastling = thisCastling;
+    switch (piece) {
+        case PAWN | WHITE:
+            if (to === board[BOARD_INDEX_EP]) {
+                board[to + 10] = EMPTY;
+            } else if (from - to === 20) {
+                nextEP = from - 10;
+            }
+            nextPly = 0;
+            break;
+        case PAWN | BLACK:
+            if (to === board[BOARD_INDEX_EP]) {
+                board[to - 10] = EMPTY;
+            } else if (to - from === 20) {
+                nextEP = from + 10;
+            }
+            nextPly = 0;
+            break;
+        case ROOK | WHITE:
+            if (from === 91) {
+                nextCastling &= ~CASTLING_QUEEN_WHITE;
+            } else if (from === 98) {
+                nextCastling &= ~CASTLING_KING_WHITE;
+            }
+            break;
+        case ROOK | BLACK:
+            if (from === 21) {
+                nextCastling &= ~CASTLING_QUEEN_BLACK;
+            } else if (from === 28) {
+                nextCastling &= ~CASTLING_KING_BLACK;
+            }
+            break;
+        case KING | WHITE:
+            board[BOARD_INDEX_WHITE_KING] = to;
+            if (from === 95) {
+                nextCastling &= ~(CASTLING_QUEEN_WHITE | CASTLING_KING_WHITE);
+                if (to === 93) {
+                    board[91] = EMPTY;
+                    board[94] = ROOK | WHITE;
+                } else if (to === 97) {
+                    board[98] = EMPTY;
+                    board[96] = ROOK | WHITE;
+                }
+            }
+            break;
+        case KING | BLACK:
+            board[BOARD_INDEX_BLACK_KING] = to;
+            if (from === 25) {
+                nextCastling &= ~(CASTLING_QUEEN_BLACK | CASTLING_KING_BLACK);
+                if (to === 23) {
+                    board[21] = EMPTY;
+                    board[24] = ROOK | BLACK;
+                } else if (to === 27) {
+                    board[28] = EMPTY;
+                    board[26] = ROOK | BLACK;
+                }
+            }
+            break;
+    }
+
+    if (captured === (ROOK | WHITE)) {
+        if (to === 91) {
+            nextCastling &= ~CASTLING_QUEEN_WHITE;
+        } else if (to === 98) {
+            nextCastling &= ~CASTLING_KING_WHITE;
         }
-        nextPly = 0;
-    } else if (piece === (PAWN | BLACK)) {
-        if (to === board[BOARD_INDEX_EP]) {
-            board[to - 10] = EMPTY;
-        } else if (to - from === 20) {
-            nextEP = from + 10;
-        }
-        nextPly = 0;
-    } else if (piece === (KING | WHITE)) {
-        board[BOARD_INDEX_WHITE_KING] = to;
-        if (from === 95 && to === 93) {
-            board[91] = EMPTY;
-            board[94] = ROOK | WHITE;
-        } else if (from === 95 && to === 97) {
-            board[98] = EMPTY;
-            board[96] = ROOK | WHITE;
-        }
-    } else if (piece === (KING | BLACK)) {
-        board[BOARD_INDEX_BLACK_KING] = to;
-        if (from === 25 && to === 23) {
-            board[21] = EMPTY;
-            board[24] = ROOK | BLACK;
-        } else if (from === 25 && to === 27) {
-            board[28] = EMPTY;
-            board[26] = ROOK | BLACK;
+    } else if (captured === (ROOK | BLACK)) {
+        if (to === 21) {
+            nextCastling &= ~CASTLING_QUEEN_BLACK;
+        } else if (to === 28) {
+            nextCastling &= ~CASTLING_KING_BLACK;
         }
     }
+
+    move[4] = thisCastling ^ nextCastling;
     move[5] = thisEP ^ nextEP;
     move[6] = thisPly ^ nextPly;
     board[BOARD_INDEX_TURN] = board[BOARD_INDEX_TURN] === WHITE ? BLACK : WHITE;
-    board[BOARD_INDEX_CASTLING] ^= move[4];
+    board[BOARD_INDEX_CASTLING] = nextCastling;
     board[BOARD_INDEX_EP] = nextEP;
     board[BOARD_INDEX_PLYS] = nextPly;
 }
@@ -442,6 +354,49 @@ export function unmakeMove(board: Board, move: Move) {
             board[26] = EMPTY;
         }
     }
+}
+
+export function isAttackedBy(board: Board, pos: number, color: number): boolean {
+    if (color === WHITE) {
+        if (board[pos + 9] === (PAWN | WHITE) || board[pos + 11] === (PAWN | WHITE))
+            return true;
+    } else {
+        if (board[pos - 9] === (PAWN | BLACK) || board[pos - 11] === (PAWN | BLACK))
+            return true;
+    }
+    for (const delta of BISHOP_MOVEMENTS) {
+        let from = pos + delta;
+        while (board[from] === EMPTY) {
+            from += delta;
+        }
+        if (board[from] === (BISHOP | color))
+            return true;
+    }
+    for (const delta of KNIGHT_MOVEMENTS) {
+        if (board[pos + delta] === (KNIGHT | color))
+            return true;
+    }
+    for (const delta of ROOK_MOVEMENTS) {
+        let from = pos + delta;
+        while (board[from] === EMPTY) {
+            from += delta;
+        }
+        if (board[from] === (ROOK | color))
+            return true;
+    }
+    for (const delta of KING_MOVEMENTS) {
+        let from = pos + delta;
+        while (board[from] === EMPTY) {
+            from += delta;
+        }
+        if (board[from] === (QUEEN | color))
+            return true;
+    }
+    for (const delta of KING_MOVEMENTS) {
+        if (board[pos + delta] === (KING | color))
+            return true;
+    }
+    return false;
 }
 
 export function makeMoveIfLegal(board: Board, move: Move): boolean {
