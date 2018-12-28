@@ -1,6 +1,6 @@
 import {
     Board, WHITE, BLACK, COLOR_MASK, PAWN, EMPTY, PIECE_MASK,
-    BISHOP, QUEEN, ROOK, KNIGHT, KING, BOARD_INDEX_TURN, BOARD_INDEX_EP, BOARD_INDEX_PLYS, BOARD_INDEX_CASTLING, BOARD_INDEX_WHITE_KING, BOARD_INDEX_BLACK_KING, posToAlgebraic, CASTLING_QUEEN_WHITE, CASTLING_KING_WHITE, CASTLING_QUEEN_BLACK, CASTLING_KING_BLACK
+    BISHOP, QUEEN, ROOK, KNIGHT, KING, BOARD_INDEX_TURN, BOARD_INDEX_EP, BOARD_INDEX_PLYS, BOARD_INDEX_CASTLING, BOARD_INDEX_WHITE_KING, BOARD_INDEX_BLACK_KING, posToAlgebraic, CASTLING_QUEEN_WHITE, CASTLING_KING_WHITE, CASTLING_QUEEN_BLACK, CASTLING_KING_BLACK, algebraicToPos
 } from './board';
 
 // 0: from
@@ -442,4 +442,11 @@ export function isAttackedBy(board: Board, pos: number, color: number): boolean 
 
 export function moveToAlgebraic(move: Move) {
     return posToAlgebraic(move[0]) + posToAlgebraic(move[1]);
+}
+
+export function algebraicToMove(s: string) {
+    return {
+        from: algebraicToPos(s.substr(0, 2)),
+        to: algebraicToPos(s.substr(2, 2))
+    };
 }
