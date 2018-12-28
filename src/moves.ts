@@ -5,8 +5,8 @@ import {
 
 // 0: from
 // 1: to
-// 2: captured
-// 3: promoted
+// 2: promoted
+// 3: captured
 // 4: from castling
 // 5: from EP
 // 6: from ply
@@ -17,6 +17,21 @@ const KNIGHT_MOVEMENTS = [-21, -19, 19, 21, -12, -8, 8, 12];
 const ROOK_MOVEMENTS = [-1, 1, -10, 10];
 const KING_MOVEMENTS = [9, 11, -9, -11, -1, 1, -10, 10];
 const PROMOTION_PIECES = [BISHOP, KNIGHT, ROOK, QUEEN];
+
+// Inspired by TSCP
+const castleMask = (function () {
+    const castleMask = new Uint8Array(12 * 10);
+    for (let i = 0; i < castleMask.length; i++) {
+        castleMask[i] = CASTLING_KING_WHITE | CASTLING_QUEEN_WHITE | CASTLING_KING_BLACK | CASTLING_QUEEN_BLACK;
+    }
+    castleMask[21] &= ~CASTLING_QUEEN_BLACK;
+    castleMask[25] &= ~(CASTLING_QUEEN_BLACK | CASTLING_KING_BLACK);
+    castleMask[28] &= ~CASTLING_KING_BLACK;
+    castleMask[91] &= ~CASTLING_QUEEN_WHITE;
+    castleMask[95] &= ~(CASTLING_QUEEN_WHITE | CASTLING_KING_WHITE);
+    castleMask[98] &= ~CASTLING_KING_WHITE;
+    return castleMask;
+})();
 
 // maximum number of moves of any position: 218 (http://www.talkchess.com/forum3/viewtopic.php?t=61792)
 
@@ -271,7 +286,7 @@ export function makeMove(board: Board, move: Move) {
     const thisPly = board[BOARD_INDEX_PLYS];
     let nextPly = captured === EMPTY ? thisPly + 1 : 0;
     const thisCastling = board[BOARD_INDEX_CASTLING];
-    let nextCastling = thisCastling;
+    const nextCastling = thisCastling & castleMask[from] & castleMask[to];
 
     switch (piece) {
         case PAWN | WHITE:
@@ -290,24 +305,9 @@ export function makeMove(board: Board, move: Move) {
             }
             nextPly = 0;
             break;
-        case ROOK | WHITE:
-            if (from === 91) {
-                nextCastling &= ~CASTLING_QUEEN_WHITE;
-            } else if (from === 98) {
-                nextCastling &= ~CASTLING_KING_WHITE;
-            }
-            break;
-        case ROOK | BLACK:
-            if (from === 21) {
-                nextCastling &= ~CASTLING_QUEEN_BLACK;
-            } else if (from === 28) {
-                nextCastling &= ~CASTLING_KING_BLACK;
-            }
-            break;
         case KING | WHITE:
             board[BOARD_INDEX_WHITE_KING] = to;
             if (from === 95) {
-                nextCastling &= ~(CASTLING_QUEEN_WHITE | CASTLING_KING_WHITE);
                 if (to === 93) {
                     board[91] = EMPTY;
                     board[94] = ROOK | WHITE;
@@ -320,7 +320,6 @@ export function makeMove(board: Board, move: Move) {
         case KING | BLACK:
             board[BOARD_INDEX_BLACK_KING] = to;
             if (from === 25) {
-                nextCastling &= ~(CASTLING_QUEEN_BLACK | CASTLING_KING_BLACK);
                 if (to === 23) {
                     board[21] = EMPTY;
                     board[24] = ROOK | BLACK;
@@ -330,20 +329,6 @@ export function makeMove(board: Board, move: Move) {
                 }
             }
             break;
-    }
-
-    if (captured === (ROOK | WHITE)) {
-        if (to === 91) {
-            nextCastling &= ~CASTLING_QUEEN_WHITE;
-        } else if (to === 98) {
-            nextCastling &= ~CASTLING_KING_WHITE;
-        }
-    } else if (captured === (ROOK | BLACK)) {
-        if (to === 21) {
-            nextCastling &= ~CASTLING_QUEEN_BLACK;
-        } else if (to === 28) {
-            nextCastling &= ~CASTLING_KING_BLACK;
-        }
     }
 
     move[4] = thisCastling;
