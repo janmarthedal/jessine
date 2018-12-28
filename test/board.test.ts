@@ -3,7 +3,7 @@ import {
     CASTLING_QUEEN_WHITE, CASTLING_KING_BLACK, CASTLING_QUEEN_BLACK, BOARD_INDEX_EP,
     BOARD_INDEX_PLYS, BOARD_INDEX_WHITE_KING, BOARD_INDEX_BLACK_KING, BLACK, algebraicToPos, Board, posToAlgebraic
 } from '../src/board';
-import { generateMoves, makeMoveIfLegal, unmakeMove, isAttackedBy, moveToAlgebraic, Move } from '../src/moves';
+import { generateMoves, makeMove, unmakeMove, isAttackedBy, moveToAlgebraic, Move } from '../src/moves';
 
 describe('algebraicToPos', () => {
 
@@ -71,7 +71,7 @@ describe('isAttackedBy', () => {
 function generateLegalMoves(board: Board): Array<Move> {
     const save = [...board];
     const moves = generateMoves(board).filter(move => {
-        const legalMove = makeMoveIfLegal(board, move);
+        const legalMove = makeMove(board, move);
         if (legalMove) {
             unmakeMove(board, move);
             return true;

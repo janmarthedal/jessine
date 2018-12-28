@@ -1,5 +1,5 @@
 import { Board, initBoard } from "./board";
-import { generateMoves, makeMoveIfLegal, unmakeMove } from "./moves";
+import { generateMoves, unmakeMove, makeMove } from "./moves";
 
 function perftSub(board: Board, depth: number) {
     if (depth === 0)
@@ -9,7 +9,7 @@ function perftSub(board: Board, depth: number) {
 
     let result = 0;
     for (const move of moves) {
-        const legalMove = makeMoveIfLegal(board, move);
+        const legalMove = makeMove(board, move);
         if (legalMove) {
             const countSub = perftSub(board, depth - 1);
             unmakeMove(board, move);

@@ -273,7 +273,7 @@ export function generateMoves(board: Board): Array<Move> {
     return moves;
 }
 
-export function makeMove(board: Board, move: Move) {
+export function makeMove(board: Board, move: Move): boolean {
     const from = move[0];
     const to = move[1];
     const piece = board[from];
@@ -287,6 +287,8 @@ export function makeMove(board: Board, move: Move) {
     let nextPly = captured === EMPTY ? thisPly + 1 : 0;
     const thisCastling = board[BOARD_INDEX_CASTLING];
     const nextCastling = thisCastling & castleMask[from] & castleMask[to];
+    const thisTurn = board[BOARD_INDEX_TURN];
+    const nextTurn = thisTurn === WHITE ? BLACK : WHITE;
 
     switch (piece) {
         case PAWN | WHITE:
@@ -334,10 +336,17 @@ export function makeMove(board: Board, move: Move) {
     move[4] = thisCastling;
     move[5] = thisEP;
     move[6] = thisPly;
-    board[BOARD_INDEX_TURN] = board[BOARD_INDEX_TURN] === WHITE ? BLACK : WHITE;
+    board[BOARD_INDEX_TURN] = nextTurn;
     board[BOARD_INDEX_CASTLING] = nextCastling;
     board[BOARD_INDEX_EP] = nextEP;
     board[BOARD_INDEX_PLYS] = nextPly;
+
+    if (isAttackedBy(board, board[thisTurn === WHITE ? BOARD_INDEX_WHITE_KING : BOARD_INDEX_BLACK_KING], nextTurn)) {
+        unmakeMove(board, move);
+        return false;
+    }
+
+    return true;
 }
 
 export function unmakeMove(board: Board, move: Move) {
@@ -345,11 +354,12 @@ export function unmakeMove(board: Board, move: Move) {
     const to = move[1];
     const promoted = move[2];
     const captured = move[3];
-    board[BOARD_INDEX_TURN] = board[BOARD_INDEX_TURN] === WHITE ? BLACK : WHITE;
+    const fromTurn = board[BOARD_INDEX_TURN] === WHITE ? BLACK : WHITE;
+    board[BOARD_INDEX_TURN] = fromTurn;
     board[BOARD_INDEX_CASTLING] = move[4];
     board[BOARD_INDEX_EP] = move[5];
     board[BOARD_INDEX_PLYS] = move[6];
-    const piece = promoted ? PAWN | board[BOARD_INDEX_TURN] : board[to];
+    const piece = promoted ? PAWN | fromTurn : board[to];
     board[from] = piece;
     board[to] = captured;
 
@@ -428,17 +438,6 @@ export function isAttackedBy(board: Board, pos: number, color: number): boolean 
             return true;
     }
     return false;
-}
-
-export function makeMoveIfLegal(board: Board, move: Move): boolean {
-    makeMove(board, move);
-    const turn = board[BOARD_INDEX_TURN];
-    const inCheck = isAttackedBy(board, board[turn === BLACK ? BOARD_INDEX_WHITE_KING : BOARD_INDEX_BLACK_KING], turn);
-    if (inCheck) {
-        unmakeMove(board, move);
-        return false;
-    }
-    return true;
 }
 
 export function moveToAlgebraic(move: Move) {
