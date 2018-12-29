@@ -1,7 +1,9 @@
 import { createInterface } from 'readline';
 import { openSync, writeSync, closeSync } from 'fs';
 import { Board, initBoard, PIECE_MASK } from './board';
-import { algebraicToMove, Move, generateMoves, makeMove, unmakeMove, moveToAlgebraic } from './moves';
+import { algebraicToMove, makeMove, moveToAlgebraic, Move } from './moves';
+import { generateLegalMoves } from './engines/common';
+import { go as goRandom } from './engines/random';
 
 const logFD = openSync('./log.txt', 'w');
 
@@ -22,17 +24,6 @@ const rl = createInterface({
 
 let board: Board;
 
-function generateLegalMoves(board: Board): Array<Move> {
-    return generateMoves(board).filter(move => {
-        const legalMove = makeMove(board, move);
-        if (legalMove) {
-            unmakeMove(board, move);
-            return true;
-        }
-        return false;
-    });
-}
-
 function makeMoveAlgebraic(board: Board, moveStr: string) {
     const { from, to, promoted } = algebraicToMove(moveStr);
     const moves = generateLegalMoves(board);
@@ -47,6 +38,8 @@ function makeMoveAlgebraic(board: Board, moveStr: string) {
     }
     makeMove(board, moveMatches[0]);
 }
+
+const goFunction: (board: Board, debug: (msg: string) => void) => Move = goRandom;
 
 rl.on('line', (input: string) => {
     writeSync(logFD, '> ' + input + '\n');
@@ -79,12 +72,10 @@ rl.on('line', (input: string) => {
             }
         }
     } else if (items[0] == 'go') {
-        const moves = generateLegalMoves(board);
-        if (moves.length === 0) {
-            debug('go: no legal moves');
+        const move = goFunction(board, debug);
+        if (!move) {
             process.exit(1);
         }
-        const move = moves[Math.floor(moves.length * Math.random())];
         output('bestmove ' + moveToAlgebraic(move));
     }
 });
