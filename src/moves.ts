@@ -1,6 +1,7 @@
 import {
-    Board, WHITE, BLACK, COLOR_MASK, PAWN, EMPTY, PIECE_MASK,
-    BISHOP, QUEEN, ROOK, KNIGHT, KING, BOARD_INDEX_TURN, BOARD_INDEX_EP, BOARD_INDEX_PLYS, BOARD_INDEX_CASTLING, BOARD_INDEX_WHITE_KING, BOARD_INDEX_BLACK_KING, posToAlgebraic, CASTLING_QUEEN_WHITE, CASTLING_KING_WHITE, CASTLING_QUEEN_BLACK, CASTLING_KING_BLACK, algebraicToPos
+    Game, WHITE, BLACK, COLOR_MASK, PAWN, EMPTY, PIECE_MASK, BISHOP, QUEEN, ROOK, KNIGHT, KING,
+    BOARD_INDEX_TURN, BOARD_INDEX_EP, BOARD_INDEX_PLYS, BOARD_INDEX_CASTLING, posToAlgebraic,
+    CASTLING_QUEEN_WHITE, CASTLING_KING_WHITE, CASTLING_QUEEN_BLACK, CASTLING_KING_BLACK, algebraicToPos
 } from './board';
 
 // 0: from
@@ -35,7 +36,8 @@ const castleMask = (function () {
 
 // maximum number of moves of any position: 218 (http://www.talkchess.com/forum3/viewtopic.php?t=61792)
 
-export function generateMoves(board: Board): Array<Move> {
+export function generateMoves(game: Game): Array<Move> {
+    const board = game.board;
     const thisTurn = board[BOARD_INDEX_TURN];
     const nextTurn = thisTurn === WHITE ? BLACK : WHITE;
     const thisCastling = board[BOARD_INDEX_CASTLING];
@@ -212,33 +214,33 @@ export function generateMoves(board: Board): Array<Move> {
                         break;
                     case KING:
                         if (pos === 95 && (thisCastling & (CASTLING_QUEEN_WHITE | CASTLING_KING_WHITE)) !== 0
-                                && !isAttackedBy(board, 95, BLACK)) {
+                                && !isAttackedBy(game, 95, BLACK)) {
                             if ((thisCastling & CASTLING_QUEEN_WHITE) !== 0
                                     && board[94] === EMPTY && board[93] === EMPTY && board[92] === EMPTY
-                                    && !isAttackedBy(board, 94, BLACK)) {
+                                    && !isAttackedBy(game, 94, BLACK)) {
                                 moveData[length++] = pos;
                                 moveData[length++] = 93;
                                 length += 5;
                             }
                             if ((thisCastling & CASTLING_KING_WHITE) !== 0
                                     && board[96] === EMPTY && board[97] === EMPTY
-                                    && !isAttackedBy(board, 96, BLACK)) {
+                                    && !isAttackedBy(game, 96, BLACK)) {
                                 moveData[length++] = pos;
                                 moveData[length++] = 97;
                                 length += 5;
                             }
                         } else if (pos === 25 && (thisCastling & (CASTLING_QUEEN_BLACK | CASTLING_KING_BLACK)) !== 0
-                                && !isAttackedBy(board, 25, WHITE)) {
+                                && !isAttackedBy(game, 25, WHITE)) {
                             if ((thisCastling & CASTLING_QUEEN_BLACK) !== 0
                                     && board[24] === EMPTY && board[23] === EMPTY && board[22] === EMPTY
-                                    && !isAttackedBy(board, 24, WHITE)) {
+                                    && !isAttackedBy(game, 24, WHITE)) {
                                 moveData[length++] = pos;
                                 moveData[length++] = 23;
                                 length += 5;
                             }
                             if ((thisCastling & CASTLING_KING_BLACK) !== 0
                                     && board[26] === EMPTY && board[27] === EMPTY
-                                    && !isAttackedBy(board, 26, WHITE)) {
+                                    && !isAttackedBy(game, 26, WHITE)) {
                                 moveData[length++] = pos;
                                 moveData[length++] = 27;
                                 length += 5;
@@ -273,7 +275,8 @@ export function generateMoves(board: Board): Array<Move> {
     return moves;
 }
 
-export function makeMove(board: Board, move: Move): boolean {
+export function makeMove(game: Game, move: Move): boolean {
+    const board = game.board;
     const from = move[0];
     const to = move[1];
     const piece = board[from];
@@ -308,7 +311,7 @@ export function makeMove(board: Board, move: Move): boolean {
             nextPly = 0;
             break;
         case KING | WHITE:
-            board[BOARD_INDEX_WHITE_KING] = to;
+            game.whiteKing = to;
             if (from === 95) {
                 if (to === 93) {
                     board[91] = EMPTY;
@@ -320,7 +323,7 @@ export function makeMove(board: Board, move: Move): boolean {
             }
             break;
         case KING | BLACK:
-            board[BOARD_INDEX_BLACK_KING] = to;
+            game.blackKing = to;
             if (from === 25) {
                 if (to === 23) {
                     board[21] = EMPTY;
@@ -341,15 +344,16 @@ export function makeMove(board: Board, move: Move): boolean {
     board[BOARD_INDEX_EP] = nextEP;
     board[BOARD_INDEX_PLYS] = nextPly;
 
-    if (isAttackedBy(board, board[thisTurn === WHITE ? BOARD_INDEX_WHITE_KING : BOARD_INDEX_BLACK_KING], nextTurn)) {
-        unmakeMove(board, move);
+    if (isAttackedBy(game, thisTurn === WHITE ? game.whiteKing : game.blackKing, nextTurn)) {
+        unmakeMove(game, move);
         return false;
     }
 
     return true;
 }
 
-export function unmakeMove(board: Board, move: Move) {
+export function unmakeMove(game: Game, move: Move) {
+    const board = game.board;
     const from = move[0];
     const to = move[1];
     const promoted = move[2];
@@ -375,7 +379,7 @@ export function unmakeMove(board: Board, move: Move) {
             }
             break;
         case KING | WHITE:
-            board[BOARD_INDEX_WHITE_KING] = from;
+            game.whiteKing = from;
             if (from === 95 && to === 93) {
                 board[91] = ROOK | WHITE;
                 board[94] = EMPTY;
@@ -385,7 +389,7 @@ export function unmakeMove(board: Board, move: Move) {
             }
             break;
         case KING | BLACK:
-            board[BOARD_INDEX_BLACK_KING] = from;
+            game.blackKing = from;
             if (from === 25 && to === 23) {
                 board[21] = ROOK | BLACK;
                 board[24] = EMPTY;
@@ -397,7 +401,8 @@ export function unmakeMove(board: Board, move: Move) {
     }
 }
 
-export function isAttackedBy(board: Board, pos: number, color: number): boolean {
+export function isAttackedBy(game: Game, pos: number, color: number): boolean {
+    const board = game.board;
     if (color === WHITE) {
         if (board[pos + 9] === (PAWN | WHITE) || board[pos + 11] === (PAWN | WHITE))
             return true;

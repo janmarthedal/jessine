@@ -1,18 +1,18 @@
-import { Board, initBoard } from "./board";
+import { Game, initGame } from "./board";
 import { generateMoves, unmakeMove, makeMove } from "./moves";
 
-function perftSub(board: Board, depth: number) {
+function perftSub(game: Game, depth: number) {
     if (depth === 0)
         return 1;
 
-    const moves = generateMoves(board);
+    const moves = generateMoves(game);
 
     let result = 0;
     for (const move of moves) {
-        const legalMove = makeMove(board, move);
+        const legalMove = makeMove(game, move);
         if (legalMove) {
-            const countSub = perftSub(board, depth - 1);
-            unmakeMove(board, move);
+            const countSub = perftSub(game, depth - 1);
+            unmakeMove(game, move);
             result += countSub;
         }
     }
@@ -20,10 +20,10 @@ function perftSub(board: Board, depth: number) {
 }
 
 export function perft(fen: string, depth: number) {
-    const board = initBoard(fen);
-    const save = [...board];
-    const result = perftSub(board, depth);
-    if (!save.every((v, i) => v === board[i]))
+    const game = initGame(fen);
+    const save = [...game.board];
+    const result = perftSub(game, depth);
+    if (!save.every((v, i) => v === game.board[i]))
         throw 'board mismatch';
     return result;
 }

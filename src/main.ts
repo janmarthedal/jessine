@@ -1,6 +1,6 @@
 import { createInterface } from 'readline';
 import { openSync, writeSync, closeSync } from 'fs';
-import { Board, initBoard, PIECE_MASK } from './board';
+import { Game, initGame as initGame, PIECE_MASK } from './board';
 import { algebraicToMove, makeMove, moveToAlgebraic, Move } from './moves';
 import { generateLegalMoves } from './variations/common';
 import { create as createRandom } from './variations/random';
@@ -23,11 +23,11 @@ const rl = createInterface({
     output: process.stdout
 });
 
-let board: Board;
+let game: Game;
 
-function makeMoveAlgebraic(board: Board, moveStr: string) {
+function makeMoveAlgebraic(game: Game, moveStr: string) {
     const { from, to, promoted } = algebraicToMove(moveStr);
-    const moves = generateLegalMoves(board);
+    const moves = generateLegalMoves(game);
     const moveMatches = moves.filter(move =>
         move[0] === from && move[1] === to && (!promoted || promoted === (move[2] & PIECE_MASK)));
     if (moveMatches.length !== 1) {
@@ -37,10 +37,10 @@ function makeMoveAlgebraic(board: Board, moveStr: string) {
         process.exit(1);
         debug(`${moveMatches.length} move matches`);
     }
-    makeMove(board, moveMatches[0]);
+    makeMove(game, moveMatches[0]);
 }
 
-let goFunction: (board: Board) => Move;
+let goFunction: (game: Game) => Move;
 
 if (process.argv[2] == 'random') {
     debug('Engine: random');
@@ -84,15 +84,15 @@ rl.on('line', (input: string) => {
             process.exit(1);
         }
         debug('init position: ' + fen);
-        board = initBoard(fen);
+        game = initGame(fen);
         if (index < items.length && items[index] == 'moves') {
             index++;
             while (index < items.length) {
-                makeMoveAlgebraic(board, items[index++]);
+                makeMoveAlgebraic(game, items[index++]);
             }
         }
     } else if (items[0] == 'go') {
-        const move = goFunction(board);
+        const move = goFunction(game);
         if (!move) {
             process.exit(1);
         }
