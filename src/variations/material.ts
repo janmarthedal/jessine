@@ -1,4 +1,7 @@
-import { Board, PAWN, WHITE, BLACK, BOARD_INDEX_TURN, BISHOP, KNIGHT, ROOK, QUEEN, BOARD_INDEX_WHITE_KING, BOARD_INDEX_BLACK_KING } from "../board";
+import {
+    Board, PAWN, WHITE, BLACK, BOARD_INDEX_TURN, BISHOP, KNIGHT, ROOK, QUEEN,
+    BOARD_INDEX_WHITE_KING, BOARD_INDEX_BLACK_KING
+} from "../board";
 import { Move, makeMove, unmakeMove, generateMoves, isAttackedBy } from "../moves";
 
 const PAWN_VALUE = 100;

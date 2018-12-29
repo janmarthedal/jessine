@@ -5,7 +5,6 @@
   "main": "dist/main.js",
   "scripts": {
     "start": "node dist/main.js",
-    "benchmark": "NODE_ENV=production node dist/benchmark.js",
     "build": "tsc",
     "build-lint": "npm run build && npm run tslint",
     "unit-test": "jest",

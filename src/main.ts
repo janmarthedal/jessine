@@ -2,9 +2,9 @@ import { createInterface } from 'readline';
 import { openSync, writeSync, closeSync } from 'fs';
 import { Board, initBoard, PIECE_MASK } from './board';
 import { algebraicToMove, makeMove, moveToAlgebraic, Move } from './moves';
-import { generateLegalMoves } from './engines/common';
-import { create as createRandom } from './engines/random';
-import { create as createMaterial } from './engines/material';
+import { generateLegalMoves } from './variations/common';
+import { create as createRandom } from './variations/random';
+import { create as createMaterial } from './variations/material';
 
 const logFD = openSync(`./log-${Date.now()}.txt`, 'w');
 
