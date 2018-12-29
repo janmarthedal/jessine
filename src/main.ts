@@ -3,10 +3,10 @@ import { openSync, writeSync, closeSync } from 'fs';
 import { Board, initBoard, PIECE_MASK } from './board';
 import { algebraicToMove, makeMove, moveToAlgebraic, Move } from './moves';
 import { generateLegalMoves } from './engines/common';
-// import { create as createRandom } from './engines/random';
+import { create as createRandom } from './engines/random';
 import { create as createMaterial } from './engines/material';
 
-const logFD = openSync('./log.txt', 'w');
+const logFD = openSync(`./log-${Date.now()}.txt`, 'w');
 
 function output(line: string) {
     line += '\n';
@@ -40,8 +40,19 @@ function makeMoveAlgebraic(board: Board, moveStr: string) {
     makeMove(board, moveMatches[0]);
 }
 
-// const goFunction: (board: Board) => Move = createRandom(debug);
-const goFunction: (board: Board) => Move = createMaterial(4, debug);
+let goFunction: (board: Board) => Move;
+
+if (process.argv[2] == 'random') {
+    debug('Engine: random');
+    goFunction = createRandom(debug);
+} else if (process.argv[2] == 'material') {
+    const depth = Number.parseInt(process.argv[3]);
+    debug(`Engine: material ${depth}`);
+    goFunction = createMaterial(depth, debug);
+} else {
+    console.error('Usage: node jessine.js [engine] [options...]');
+    process.exit(0);
+}
 
 rl.on('line', (input: string) => {
     writeSync(logFD, '> ' + input + '\n');

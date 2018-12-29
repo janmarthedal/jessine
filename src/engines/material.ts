@@ -56,9 +56,8 @@ function search(board: Board, depth: number): number {
     if (depth === 0) {
         return evaluateBoard(board, turn);
     } else {
-        const pseudoMoves = generateMoves(board);
         const scores: Array<number> = [];
-        for (const move of pseudoMoves) {
+        for (const move of generateMoves(board)) {
             const legalMove = makeMove(board, move);
             if (legalMove) {
                 const score = -search(board, depth - 1);
@@ -67,9 +66,10 @@ function search(board: Board, depth: number): number {
             }
         }
         if (scores.length === 0) {
-            return isAttackedBy(board,
-                                board[turn === WHITE ? BOARD_INDEX_WHITE_KING : BOARD_INDEX_BLACK_KING],
-                                turn === WHITE ? BLACK : WHITE) ? -1000000 : 0;
+            // draw or mate?
+            const kingPosition = board[turn === WHITE ? BOARD_INDEX_WHITE_KING : BOARD_INDEX_BLACK_KING];
+            const opponent = turn === WHITE ? BLACK : WHITE;
+            return isAttackedBy(board, kingPosition, opponent) ? -1000000 : 0;
         }
         return Math.max(...scores);
     }
@@ -77,9 +77,8 @@ function search(board: Board, depth: number): number {
 
 export function create(depth: number, debug: (msg: string) => void) {
     return (board: Board): Move => {
-        const pseudoMoves = generateMoves(board);
         const moves: Array<{ move: Move, score: number }> = [];
-        for (const move of pseudoMoves) {
+        for (const move of generateMoves(board)) {
             const legalMove = makeMove(board, move);
             if (legalMove) {
                 const score = -search(board, depth - 1);
