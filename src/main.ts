@@ -3,7 +3,8 @@ import { openSync, writeSync, closeSync } from 'fs';
 import { Board, initBoard, PIECE_MASK } from './board';
 import { algebraicToMove, makeMove, moveToAlgebraic, Move } from './moves';
 import { generateLegalMoves } from './engines/common';
-import { go as goRandom } from './engines/random';
+// import { create as createRandom } from './engines/random';
+import { create as createMaterial } from './engines/material';
 
 const logFD = openSync('./log.txt', 'w');
 
@@ -39,7 +40,8 @@ function makeMoveAlgebraic(board: Board, moveStr: string) {
     makeMove(board, moveMatches[0]);
 }
 
-const goFunction: (board: Board, debug: (msg: string) => void) => Move = goRandom;
+// const goFunction: (board: Board) => Move = createRandom(debug);
+const goFunction: (board: Board) => Move = createMaterial(4, debug);
 
 rl.on('line', (input: string) => {
     writeSync(logFD, '> ' + input + '\n');
@@ -72,7 +74,7 @@ rl.on('line', (input: string) => {
             }
         }
     } else if (items[0] == 'go') {
-        const move = goFunction(board, debug);
+        const move = goFunction(board);
         if (!move) {
             process.exit(1);
         }

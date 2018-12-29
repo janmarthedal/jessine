@@ -1,11 +1,14 @@
 import { Board } from "../board";
 import { generateLegalMoves } from "./common";
+import { Move } from "../moves";
 
-export function go(board: Board, debug: (msg: string) => void) {
-    const moves = generateLegalMoves(board);
-    if (moves.length === 0) {
-        debug('goRandom: no legal moves');
-        return null;
-    }
-    return moves[Math.floor(moves.length * Math.random())];
+export function create(debug: (msg: string) => void) {
+    return (board: Board): Move => {
+        const moves = generateLegalMoves(board);
+        if (moves.length === 0) {
+            debug('goRandom: no legal moves');
+            return null;
+        }
+        return moves[Math.floor(moves.length * Math.random())];
+    };
 }
