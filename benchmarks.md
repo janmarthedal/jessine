@@ -2,58 +2,22 @@
 
 Commit `29e84b34491c21522c2fb7da3fefd6f35f682fdb`
 
-```
-Initial position (5) 2443 ms
-Kiwipete (4) 1707 ms
-Position 3 (5) 338 ms
-Position 6 (4) 1467 ms
-Initial position (5) 1963 ms
-Kiwipete (4) 1538 ms
-Position 3 (5) 333 ms
-Position 6 (4) 1408 ms
-Initial position (5) 1983 ms
-Kiwipete (4) 1574 ms
-Position 3 (5) 339 ms
-Position 6 (4) 1419 ms
-Total time (3 runs): 16515 ms
-```
+Best time (of 3 runs): 5242 ms
 
 ## Fri Dec 28 10:04:15 2018 +0100
 
 Commit `00bd753ece7852468b1a8171f197e0cf9c348fa3`
 
-```
-Initial position (5) 1990 ms
-Kiwipete (4) 1460 ms
-Position 3 (5) 319 ms
-Position 6 (4) 1240 ms
-Initial position (5) 1788 ms
-Kiwipete (4) 1396 ms
-Position 3 (5) 314 ms
-Position 6 (4) 1260 ms
-Initial position (5) 1803 ms
-Kiwipete (4) 1401 ms
-Position 3 (5) 309 ms
-Position 6 (4) 1269 ms
-Total time (3 runs): 14551 ms
-```
+Best time (of 3 runs): 4758 ms
 
 ## Fri Dec 28 11:25:02 2018 +0100
 
 Commit `f9c00e6ef133edce74493b5ce746ad42b92883fd`
 
-```
-Initial position (5) 1922 ms
-Kiwipete (4) 1423 ms
-Position 3 (5) 305 ms
-Position 6 (4) 1205 ms
-Initial position (5) 1737 ms
-Kiwipete (4) 1362 ms
-Position 3 (5) 302 ms
-Position 6 (4) 1210 ms
-Initial position (5) 1751 ms
-Kiwipete (4) 1361 ms
-Position 3 (5) 296 ms
-Position 6 (4) 1213 ms
-Total time (3 runs): 14092 ms
-```
+Best time (of 3 runs): 4611 ms
+
+## Sat Dec 29 16:31:06 2018 +0100
+
+Commit `8607c70071e1cd083a7e539af1ec978777dedf44`
+
+Best time (of 3 runs): 4416 ms
