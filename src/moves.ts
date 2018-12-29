@@ -38,21 +38,20 @@ const castleMask = (function () {
 
 export function generateMoves(game: Game): Array<Move> {
     const board = game.board;
-    const thisTurn = board[BOARD_INDEX_TURN];
-    const nextTurn = thisTurn === WHITE ? BLACK : WHITE;
-    const thisCastling = board[BOARD_INDEX_CASTLING];
-    const thisEP = board[BOARD_INDEX_EP];
+    const side = board[BOARD_INDEX_TURN];
+    const xside = side === WHITE ? BLACK : WHITE;
+    const castling = board[BOARD_INDEX_CASTLING];
+    const ep = board[BOARD_INDEX_EP];
     const moveData = new Uint8Array(256 * 7);
-    let length = 0, pos = 21, piece: number, basePiece: number;
+    let length = 0, pos = 21, piece: number;
 
     for (let r = 8; r >= 1; r--) {
         for (let c = 1; c <= 8; c++) {
             piece = board[pos];
-            basePiece = piece & PIECE_MASK;
-            if ((piece & COLOR_MASK) === thisTurn) {
-                switch (basePiece) {
+            if ((piece & COLOR_MASK) === side) {
+                switch (piece & PIECE_MASK) {
                     case PAWN:
-                        if (thisTurn === WHITE) {
+                        if (side === WHITE) {
                             if (r === 7) {
                                 if (board[pos - 10] === EMPTY) {
                                     PROMOTION_PIECES.forEach(p => {
@@ -89,12 +88,12 @@ export function generateMoves(game: Game): Array<Move> {
                                         length += 5;
                                     }
                                 }
-                                if ((board[pos - 11] & COLOR_MASK) === BLACK || pos - 11 === thisEP) {
+                                if ((board[pos - 11] & COLOR_MASK) === BLACK || pos - 11 === ep) {
                                     moveData[length++] = pos;
                                     moveData[length++] = pos - 11;
                                     length += 5;
                                 }
-                                if ((board[pos - 9] & COLOR_MASK) === BLACK || pos - 9 === thisEP) {
+                                if ((board[pos - 9] & COLOR_MASK) === BLACK || pos - 9 === ep) {
                                     moveData[length++] = pos;
                                     moveData[length++] = pos - 9;
                                     length += 5;
@@ -137,12 +136,12 @@ export function generateMoves(game: Game): Array<Move> {
                                         length += 5;
                                     }
                                 }
-                                if ((board[pos + 11] & COLOR_MASK) === WHITE || pos + 11 === thisEP) {
+                                if ((board[pos + 11] & COLOR_MASK) === WHITE || pos + 11 === ep) {
                                     moveData[length++] = pos;
                                     moveData[length++] = pos + 11;
                                     length += 5;
                                 }
-                                if ((board[pos + 9] & COLOR_MASK) === WHITE || pos + 9 === thisEP) {
+                                if ((board[pos + 9] & COLOR_MASK) === WHITE || pos + 9 === ep) {
                                     moveData[length++] = pos;
                                     moveData[length++] = pos + 9;
                                     length += 5;
@@ -159,7 +158,7 @@ export function generateMoves(game: Game): Array<Move> {
                                 length += 5;
                                 to += delta;
                             }
-                            if ((board[to] & COLOR_MASK) === nextTurn) {
+                            if ((board[to] & COLOR_MASK) === xside) {
                                 moveData[length++] = pos;
                                 moveData[length++] = to;
                                 length += 5;
@@ -173,7 +172,7 @@ export function generateMoves(game: Game): Array<Move> {
                                 moveData[length++] = pos;
                                 moveData[length++] = to;
                                 length += 5;
-                            } else if ((board[to] & COLOR_MASK) === nextTurn) {
+                            } else if ((board[to] & COLOR_MASK) === xside) {
                                 moveData[length++] = pos;
                                 moveData[length++] = to;
                                 length += 5;
@@ -189,7 +188,7 @@ export function generateMoves(game: Game): Array<Move> {
                                 length += 5;
                                 to += delta;
                             }
-                            if ((board[to] & COLOR_MASK) === nextTurn) {
+                            if ((board[to] & COLOR_MASK) === xside) {
                                 moveData[length++] = pos;
                                 moveData[length++] = to;
                                 length += 5;
@@ -205,7 +204,7 @@ export function generateMoves(game: Game): Array<Move> {
                                 length += 5;
                                 to += delta;
                             }
-                            if ((board[to] & COLOR_MASK) === nextTurn) {
+                            if ((board[to] & COLOR_MASK) === xside) {
                                 moveData[length++] = pos;
                                 moveData[length++] = to;
                                 length += 5;
@@ -213,32 +212,32 @@ export function generateMoves(game: Game): Array<Move> {
                         }
                         break;
                     case KING:
-                        if (pos === 95 && (thisCastling & (CASTLING_QUEEN_WHITE | CASTLING_KING_WHITE)) !== 0
+                        if (pos === 95 && (castling & (CASTLING_QUEEN_WHITE | CASTLING_KING_WHITE)) !== 0
                                 && !isAttackedBy(game, 95, BLACK)) {
-                            if ((thisCastling & CASTLING_QUEEN_WHITE) !== 0
+                            if ((castling & CASTLING_QUEEN_WHITE) !== 0
                                     && board[94] === EMPTY && board[93] === EMPTY && board[92] === EMPTY
                                     && !isAttackedBy(game, 94, BLACK)) {
                                 moveData[length++] = pos;
                                 moveData[length++] = 93;
                                 length += 5;
                             }
-                            if ((thisCastling & CASTLING_KING_WHITE) !== 0
+                            if ((castling & CASTLING_KING_WHITE) !== 0
                                     && board[96] === EMPTY && board[97] === EMPTY
                                     && !isAttackedBy(game, 96, BLACK)) {
                                 moveData[length++] = pos;
                                 moveData[length++] = 97;
                                 length += 5;
                             }
-                        } else if (pos === 25 && (thisCastling & (CASTLING_QUEEN_BLACK | CASTLING_KING_BLACK)) !== 0
+                        } else if (pos === 25 && (castling & (CASTLING_QUEEN_BLACK | CASTLING_KING_BLACK)) !== 0
                                 && !isAttackedBy(game, 25, WHITE)) {
-                            if ((thisCastling & CASTLING_QUEEN_BLACK) !== 0
+                            if ((castling & CASTLING_QUEEN_BLACK) !== 0
                                     && board[24] === EMPTY && board[23] === EMPTY && board[22] === EMPTY
                                     && !isAttackedBy(game, 24, WHITE)) {
                                 moveData[length++] = pos;
                                 moveData[length++] = 23;
                                 length += 5;
                             }
-                            if ((thisCastling & CASTLING_KING_BLACK) !== 0
+                            if ((castling & CASTLING_KING_BLACK) !== 0
                                     && board[26] === EMPTY && board[27] === EMPTY
                                     && !isAttackedBy(game, 26, WHITE)) {
                                 moveData[length++] = pos;
@@ -252,7 +251,7 @@ export function generateMoves(game: Game): Array<Move> {
                                 moveData[length++] = pos;
                                 moveData[length++] = to;
                                 length += 5;
-                            } else if ((board[to] & COLOR_MASK) === nextTurn) {
+                            } else if ((board[to] & COLOR_MASK) === xside) {
                                 moveData[length++] = pos;
                                 moveData[length++] = to;
                                 length += 5;
