@@ -66,22 +66,29 @@ rl.on('line', (input: string) => {
     } else if (items[0] == 'isready') {
         output('readyok');
     } else if (items[0] == 'position') {
-        let fen: string, movesIndex: number;
+        let fen: string;
+        let index = 2;
         if (items[1] == 'startpos') {
             // position startpos
             // position startpos moves e2e4 e7e5
             fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0';
-            movesIndex = 2;
-        } /*else if (items[1] == 'fen') {
-            //items.
-        }*/ else {
+        } else if (items[1] == 'fen' && items.length >= 4) {
+            // position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w moves e2e4 e7e5
+            const fenItems: Array<string> = [];
+            while (index < items.length && items[index] != 'moves') {
+                fenItems.push(items[index++]);
+            }
+            fen = fenItems.join(' ');
+        } else {
             debug('position: unknown');
             process.exit(1);
         }
+        debug('init position: ' + fen);
         board = initBoard(fen);
-        if (items.length > movesIndex && items[movesIndex] == 'moves') {
-            for (let k = movesIndex + 1; k < items.length; k++) {
-                makeMoveAlgebraic(board, items[k]);
+        if (index < items.length && items[index] == 'moves') {
+            index++;
+            while (index < items.length) {
+                makeMoveAlgebraic(board, items[index++]);
             }
         }
     } else if (items[0] == 'go') {
